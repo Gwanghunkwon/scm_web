@@ -156,16 +156,19 @@
 - UI 라이브러리: Ant Design / MUI / Element 등 중 택1
 
 ### 6.2 백엔드
-- Node.js(Express 또는 NestJS) 또는 Spring Boot(Java/Kotlin)
-- RESTful API 기반 서비스 계층(수요예측, 생산계획, MRP, 발주 등 도메인 단위 분리)
+- Python FastAPI + Uvicorn
+- 도메인 단위 Router(품목, 재고, 수요예측, 생산계획, MRP, 발주 등)로 분리
+- Render/Railway/Fly.io 중 하나에 컨테이너 또는 Web Service 형태로 배포
 
 ### 6.3 데이터베이스
-- PostgreSQL 또는 MySQL
-- 향후 확장을 위해 표준적인 RDB 스키마 설계
+- PostgreSQL (Supabase/Render DB/Neon 등 매니지드 서비스)
+- ERD 기준으로 테이블 설계 후 마이그레이션 관리(예: Alembic)
 
 ### 6.4 외부 서비스
-- (선택) 사용자 인증 또는 SSO 연동
-- (선택) 메일/슬랙/카카오워크 등의 알림 서비스 연동
+- (필수) GitHub + Vercel: `frontend` 자동 빌드/배포
+- (추천) Render: `backend` FastAPI 자동 배포
+- (필수) Supabase/Neon: PostgreSQL 관리
+- (선택) Cloudflare R2/AWS S3: Excel·첨부 파일 저장
 
 ## 7. 수용 기준 (Acceptance Criteria)
 - [ ] 수요예측 → 생산계획 → MRP → 발주 → 입고 → 재고 반영의 기본 플로우를 한 화면 흐름에서 수행할 수 있다.

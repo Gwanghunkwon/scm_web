@@ -14,20 +14,23 @@
 ```
 [사용자 브라우저]
     ↓
-[프론트엔드 SPA (React/Vue + Vite)]
-    ↓ (HTTPS, REST API)
-[백엔드 API 서버 (Node.js/NestJS 또는 Spring Boot)]
+[프론트엔드 SPA (React + Vite, Vercel 배포)]
+    ↓  (HTTPS, REST API)
+[백엔드 API 서버 (FastAPI, Render/Railway/AWS)]
     ↓
-[RDBMS (PostgreSQL/MySQL)]
+[PostgreSQL (Supabase/Render DB)]
+    ↓
+[파일 스토리지 (Cloudflare R2 / S3)]
 
-※ (선택) 인증/SSO, 알림(메일/Slack 등) 외부 서비스 연동
+※ 인증/SSO, 알림(메일/Slack 등)은 향후 연동 대상
 ```
 
 ### 2.2 기술 스택
-- **프론트엔드**: React 또는 Vue + TypeScript, Vite, UI 라이브러리(Ant Design/MUI 등)
-- **백엔드**: Node.js(Express/NestJS) 또는 Spring Boot(Java/Kotlin) 기반 REST API
-- **데이터베이스**: PostgreSQL 또는 MySQL
-- **인프라**: 클라우드(AWS EC2 + RDS 등) 또는 온프레미스, 정적 프론트는 Vercel/Netlify 등도 가능
+- **프론트엔드**: React + TypeScript, Vite, UI 라이브러리(Ant Design/MUI 등)
+- **백엔드**: Python FastAPI + Uvicorn (도메인별 Router 구성)
+- **데이터베이스**: PostgreSQL (Supabase/Render DB 등 매니지드 서비스)
+- **스토리지**: Cloudflare R2 또는 AWS S3 (엑셀/파일 업로드용)
+- **인프라**: 프론트는 Vercel(무료 플랜), 백엔드는 Render/Railway, 필요 시 AWS EC2로 확장
 
 ### 2.3 폴더 구조
 ```
@@ -104,42 +107,56 @@ SCM/
 - warehouse 1:N inventory
 
 ## 4. API 설계
-### 4.1 API 엔드포인트 목록
-- `GET /api/v1/[리소스]` - [설명]
-- `POST /api/v1/[리소스]` - [설명]
-- `PUT /api/v1/[리소스]/{id}` - [설명]
-- `DELETE /api/v1/[리소스]/{id}` - [설명]
+### 4.1 API 엔드포인트 목록 (예시)
+- 품목/기초데이터
+  - `GET /api/items`, `POST /api/items`, `PUT /api/items/{id}`
+  - `GET /api/warehouses`
+  - `GET /api/boms`, `POST /api/boms`
+- 수요/생산
+  - `GET /api/demand-forecasts`, `POST /api/demand-forecasts/bulk`
+  - `GET /api/production-plans`, `POST /api/production-plans`
+  - `POST /api/production-plans/from-forecast`
+- 재고/입출고
+  - `GET /api/inventories`
+  - `GET /api/stock-transactions`, `POST /api/stock-transactions`
+- 소요량/MRP
+  - `POST /api/mrp/run`
+  - `GET /api/mrp/results`
+- 발주/입고
+  - `GET /api/purchase-orders`, `POST /api/purchase-orders`
+  - `POST /api/purchase-orders/{id}/receive`
 
-### 4.2 주요 API 상세
-#### API 1: [API명]
-- **엔드포인트**: `[HTTP 메서드] /api/v1/[경로]`
-- **요청**: 
+### 4.2 주요 API 상세 (예: MRP 실행)
+- **엔드포인트**: `POST /api/mrp/run`
+- **요청**:
   ```json
   {
-    "field1": "value1",
-    "field2": "value2"
+    "planPeriodStart": "2026-04-01",
+    "planPeriodEnd": "2026-04-30",
+    "includeSafetyStock": true
   }
   ```
 - **응답**:
   ```json
   {
     "status": "success",
-    "data": {}
+    "generatedCount": 120
   }
   ```
-- **에러 처리**: [에러 케이스 및 응답]
+- **에러 처리**: 생산계획 없음, BOM/리드타임 누락, DB 오류 등 상황별 에러 코드·메시지 정의
 
 ## 5. 데이터 흐름
-### 5.1 주요 플로우
-1. [단계 1]
-2. [단계 2]
-3. [단계 3]
-4. [단계 4]
+### 5.1 주요 플로우 (재고 조회 예시)
+1. 사용자가 웹에서 재고 현황 화면을 요청한다.
+2. Frontend에서 `GET /api/inventories` 를 호출한다.
+3. FastAPI 서버가 PostgreSQL에서 재고·입출고 데이터를 조회하고 집계한다.
+4. JSON 형태로 응답을 반환하고, Frontend에서 테이블·카드 형태로 표시한다.
 
-### 5.2 상태 전이
+### 5.2 상태 전이 (예시)
 ```
-[상태 1] -> [이벤트] -> [상태 2]
-[상태 2] -> [이벤트] -> [상태 3]
+[생산계획: 임시]  --확정-->  [생산계획: 확정]
+[발주: 요청]      --발주-->  [발주: 발주]
+[발주: 발주]      --입고-->  [발주: 입고완료]
 ```
 
 ## 6. 단계별 구현 계획
