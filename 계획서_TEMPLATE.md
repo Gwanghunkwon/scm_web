@@ -80,6 +80,15 @@ SCM/
   - `qty`
   - `as_of_date`
 
+- **user (사용자)**
+  - `id`: PK
+  - `email`: 로그인 이메일 (Unique)
+  - `password_hash`: 암호화된 비밀번호
+  - `name`: 이름
+  - `role`: 역할(ADMIN/PLANNER/BUYER/INVENTORY/VIEWER 등)
+  - `is_active`: 활성 여부
+  - `created_at`, `updated_at`
+
 - **bom (BOM)**
   - `id`: PK
   - `parent_item_id`: 상위 제품
@@ -108,6 +117,10 @@ SCM/
 
 ## 4. API 설계
 ### 4.1 API 엔드포인트 목록 (예시)
+- 인증/사용자
+  - `POST /api/auth/register` (회원가입)
+  - `POST /api/auth/login` (로그인, JWT 토큰 발급)
+  - `GET /api/auth/me` (내 정보 조회)
 - 품목/기초데이터
   - `GET /api/items`, `POST /api/items`, `PUT /api/items/{id}`
   - `GET /api/warehouses`

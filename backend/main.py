@@ -3,7 +3,19 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
 from core.database import Base, engine
-from routers import auth_router, item_router
+from routers import (
+    auth_router,
+    bom_router,
+    demand_forecast_router,
+    inventory_router,
+    item_router,
+    lead_time_router,
+    mrp_router,
+    production_plan_router,
+    purchase_order_router,
+    stock_transaction_router,
+    warehouse_router,
+)
 
 
 def create_app() -> FastAPI:
@@ -21,6 +33,15 @@ def create_app() -> FastAPI:
     # 라우터 등록
     app.include_router(auth_router.router)
     app.include_router(item_router.router)
+    app.include_router(warehouse_router.router)
+    app.include_router(bom_router.router)
+    app.include_router(lead_time_router.router)
+    app.include_router(demand_forecast_router.router)
+    app.include_router(production_plan_router.router)
+    app.include_router(inventory_router.router)
+    app.include_router(stock_transaction_router.router)
+    app.include_router(mrp_router.router)
+    app.include_router(purchase_order_router.router)
 
     return app
 

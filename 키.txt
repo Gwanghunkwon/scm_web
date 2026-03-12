@@ -1,0 +1,6 @@
+DATABASE_URL=postgresql://scm_user:1q2w3e4r!!@localhost:5432/scm_db
+JWT_SECRET_KEY=kjf3JH8sPq91Lx0zVbN4cR7uT2wY6aZ
+ENV=prod
+
+API 사이트
+http://3.35.37.72:8000/docs

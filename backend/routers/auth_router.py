@@ -66,6 +66,10 @@ def login(
         subject=user.id,
         expires_delta=access_token_expires,
     )
+    access_token = create_access_token(
+        subject=user.id,
+        expires_delta=access_token_expires,
+    )
     return Token(access_token=access_token)
 
 
@@ -94,6 +98,18 @@ def get_current_user(
             detail="유효하지 않은 사용자입니다.",
         )
     return user
+
+
+def require_role(*roles: str):
+    def dependency(current_user: User = Depends(get_current_user)) -> User:
+        if roles and current_user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="해당 기능에 접근할 권한이 없습니다.",
+            )
+        return current_user
+
+    return dependency
 
 
 @router.get("/me", response_model=UserRead)

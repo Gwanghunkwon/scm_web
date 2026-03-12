@@ -1,4 +1,8 @@
-import { useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { createItem, fetchItems, fetchMe, Item, login, MeResponse } from './api'
+import { AlertBar } from './components/AlertBar'
+import { SearchFilter } from './components/SearchFilter'
+import { PaginationControls } from './components/PaginationControls'
 import './App.css'
 
 type MenuKey =
@@ -16,7 +20,83 @@ type MenuKey =
   | 'stock'
 
 function App() {
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return window.localStorage.getItem('scm_token')
+  })
+  const [currentUser, setCurrentUser] = useState<MeResponse | null>(null)
+  const [authError, setAuthError] = useState<string | null>(null)
+  const [isLoadingAuth, setIsLoadingAuth] = useState(false)
   const [activeMenu, setActiveMenu] = useState<MenuKey>('dashboard')
+  const [items, setItems] = useState<Item[]>([])
+  const [itemsFilter, setItemsFilter] = useState({ codeOrName: '' })
+  const [itemsPage, setItemsPage] = useState(1)
+  const [itemsPageSize] = useState(10)
+  const [itemsLoading, setItemsLoading] = useState(false)
+  const [globalMessage, setGlobalMessage] = useState<string | null>(null)
+  const [globalMessageType, setGlobalMessageType] = useState<'info' | 'error'>('info')
+
+  useEffect(() => {
+    if (!token) {
+      setCurrentUser(null)
+      return
+    }
+
+    let cancelled = false
+    setIsLoadingAuth(true)
+    fetchMe(token)
+      .then((user) => {
+        if (!cancelled) {
+          setCurrentUser(user)
+          setAuthError(null)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCurrentUser(null)
+          setToken(null)
+          window.localStorage.removeItem('scm_token')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingAuth(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [token])
+
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const email = String(formData.get('email') || '')
+    const password = String(formData.get('password') || '')
+
+    if (!email || !password) {
+      setAuthError('이메일과 비밀번호를 모두 입력해 주세요.')
+      return
+    }
+
+    try {
+      setIsLoadingAuth(true)
+      const accessToken = await login(email, password)
+      setToken(accessToken)
+      window.localStorage.setItem('scm_token', accessToken)
+      setAuthError(null)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '로그인에 실패했습니다.'
+      setAuthError(message)
+    } finally {
+      setIsLoadingAuth(false)
+    }
+  }
+
+  const handleLogout = () => {
+    setToken(null)
+    setCurrentUser(null)
+    window.localStorage.removeItem('scm_token')
+  }
 
   const pageMeta = useMemo(() => {
     switch (activeMenu) {
@@ -96,6 +176,80 @@ function App() {
     }
   }, [activeMenu])
 
+  useEffect(() => {
+    if (activeMenu !== 'items') return
+    setItemsLoading(true)
+    fetchItems()
+      .then((data) => setItems(data))
+      .catch(() => {
+        setGlobalMessageType('error')
+        setGlobalMessage('품목 목록을 불러오지 못했습니다.')
+      })
+      .finally(() => setItemsLoading(false))
+  }, [activeMenu])
+
+  const filteredItems = useMemo(() => {
+    const keyword = itemsFilter.codeOrName.trim().toLowerCase()
+    let data = items
+    if (keyword) {
+      data = data.filter(
+        (i) =>
+          i.code.toLowerCase().includes(keyword) ||
+          i.name.toLowerCase().includes(keyword),
+      )
+    }
+    return data
+  }, [items, itemsFilter])
+
+  const pagedItems = useMemo(() => {
+    const start = (itemsPage - 1) * itemsPageSize
+    return filteredItems.slice(start, start + itemsPageSize)
+  }, [filteredItems, itemsPage, itemsPageSize])
+
+  const itemsTotalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPageSize))
+
+  const handleCreateItem = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const code = String(formData.get('code') || '').trim()
+    const name = String(formData.get('name') || '').trim()
+    const type = String(formData.get('type') || '').trim()
+    const uom = String(formData.get('uom') || '').trim()
+    const safetyStock = Number(formData.get('safety_stock_qty') || '0')
+    const leadTime = Number(formData.get('lead_time_days') || '0')
+
+    if (!code || !name || !type || !uom) {
+      setGlobalMessageType('error')
+      setGlobalMessage('코드, 이름, 유형, 단위는 필수입니다.')
+      return
+    }
+    if (Number.isNaN(safetyStock) || Number.isNaN(leadTime) || leadTime < 0) {
+      setGlobalMessageType('error')
+      setGlobalMessage('안전재고와 리드타임은 숫자(리드타임은 0 이상)여야 합니다.')
+      return
+    }
+
+    try {
+      const created = await createItem({
+        code,
+        name,
+        type,
+        uom,
+        safety_stock_qty: safetyStock,
+        lead_time_days: leadTime,
+        is_active: true,
+      })
+      setItems((prev) => [created, ...prev])
+      e.currentTarget.reset()
+      setGlobalMessageType('info')
+      setGlobalMessage('품목이 추가되었습니다.')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '품목 추가에 실패했습니다.'
+      setGlobalMessageType('error')
+      setGlobalMessage(msg)
+    }
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -108,9 +262,46 @@ function App() {
         <div className="app-header-right">
           <span className="app-tag">MVP · 내부용</span>
           <span>플로우: 수요 → 생산 → MRP → 발주 → 재고</span>
+          {currentUser ? (
+            <>
+              <span>{currentUser.name} ({currentUser.role})</span>
+              <button className="sidebar-item" onClick={handleLogout}>
+                <span className="sidebar-item-label">로그아웃</span>
+              </button>
+            </>
+          ) : null}
         </div>
       </header>
       <div className="app-body">
+        {!currentUser && (
+          <main className="app-content">
+            <section className="panel">
+              <div className="panel-title-row">
+                <h2 className="panel-title">로그인</h2>
+                <span className="panel-tag">SCM 접근을 위해 로그인하세요</span>
+              </div>
+              <p className="panel-description">
+                이미 가입한 사용자는 이메일/비밀번호로 로그인할 수 있습니다. 회원가입 API는 준비되어 있으며,
+                추후 별도 화면으로 연결할 수 있습니다.
+              </p>
+              <form className="login-form" onSubmit={handleLogin}>
+                <div className="login-field">
+                  <label htmlFor="email">이메일</label>
+                  <input id="email" name="email" type="email" placeholder="you@example.com" />
+                </div>
+                <div className="login-field">
+                  <label htmlFor="password">비밀번호</label>
+                  <input id="password" name="password" type="password" placeholder="••••••••" />
+                </div>
+                {authError && <div className="login-error">{authError}</div>}
+                <button type="submit" disabled={isLoadingAuth}>
+                  {isLoadingAuth ? '로그인 중...' : '로그인'}
+                </button>
+              </form>
+            </section>
+          </main>
+        )}
+        {currentUser && (
         <nav className="app-sidebar">
           <div className="sidebar-section">
             <div className="sidebar-section-title">메인</div>
@@ -251,18 +442,93 @@ function App() {
               </div>
             )}
 
+            {globalMessage && <AlertBar type={globalMessageType}>{globalMessage}</AlertBar>}
+
             {activeMenu === 'items' && (
               <div className="two-column-layout">
                 <div>
                   <strong>검색 조건</strong>
                   <div className="table-placeholder">
-                    품목코드/명, 유형(제품/원자재), 활성 여부 등 필터가 들어갈 영역입니다.
+                    <SearchFilter
+                      label="코드/명 검색"
+                      value={itemsFilter.codeOrName}
+                      placeholder="예: A100 또는 제품명"
+                      onChange={(value) => setItemsFilter({ codeOrName: value })}
+                    />
                   </div>
+
+                  <strong style={{ marginTop: 12, display: 'block' }}>품목 추가</strong>
+                  <form className="login-form" onSubmit={handleCreateItem}>
+                    <div className="login-field">
+                      <label htmlFor="code">코드</label>
+                      <input id="code" name="code" />
+                    </div>
+                    <div className="login-field">
+                      <label htmlFor="name">이름</label>
+                      <input id="name" name="name" />
+                    </div>
+                    <div className="login-field">
+                      <label htmlFor="type">유형 (PRODUCT/RAW)</label>
+                      <input id="type" name="type" placeholder="PRODUCT 또는 RAW" />
+                    </div>
+                    <div className="login-field">
+                      <label htmlFor="uom">단위</label>
+                      <input id="uom" name="uom" placeholder="EA, KG 등" />
+                    </div>
+                    <div className="login-field">
+                      <label htmlFor="safety_stock_qty">안전재고</label>
+                      <input id="safety_stock_qty" name="safety_stock_qty" type="number" defaultValue={0} />
+                    </div>
+                    <div className="login-field">
+                      <label htmlFor="lead_time_days">리드타임(일)</label>
+                      <input id="lead_time_days" name="lead_time_days" type="number" defaultValue={0} />
+                    </div>
+                    <button type="submit">품목 추가</button>
+                  </form>
                 </div>
                 <div>
                   <strong>품목 목록</strong>
                   <div className="table-placeholder">
-                    테이블 컬럼 예시: 품목코드, 품목명, 유형, 단위, 기본창고, 안전재고, 리드타임.
+                    {itemsLoading ? (
+                      <div>불러오는 중...</div>
+                    ) : (
+                      <>
+                        <table className="simple-table">
+                          <thead>
+                            <tr>
+                              <th>코드</th>
+                              <th>이름</th>
+                              <th>유형</th>
+                              <th>단위</th>
+                              <th>안전재고</th>
+                              <th>리드타임(일)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {pagedItems.map((item) => (
+                              <tr key={item.id}>
+                                <td>{item.code}</td>
+                                <td>{item.name}</td>
+                                <td>{item.type}</td>
+                                <td>{item.uom}</td>
+                                <td>{item.safety_stock_qty}</td>
+                                <td>{item.lead_time_days}</td>
+                              </tr>
+                            ))}
+                            {pagedItems.length === 0 && (
+                              <tr>
+                                <td colSpan={6}>등록된 품목이 없습니다.</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                        <PaginationControls
+                          page={itemsPage}
+                          totalPages={itemsTotalPages}
+                          onPageChange={setItemsPage}
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -355,6 +621,7 @@ function App() {
             )}
           </section>
         </main>
+        )}
       </div>
     </div>
   )
