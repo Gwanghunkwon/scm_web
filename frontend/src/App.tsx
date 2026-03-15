@@ -18,6 +18,7 @@ import {
   fetchStockTransactions,
   fetchWarehouses,
   login,
+  register,
   runMrpCalc,
 } from './api'
 import type {
@@ -59,6 +60,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState<MeResponse | null>(null)
   const [authError, setAuthError] = useState<string | null>(null)
   const [isLoadingAuth, setIsLoadingAuth] = useState(false)
+  const [showSignup, setShowSignup] = useState(false)
   const [activeMenu, setActiveMenu] = useState<MenuKey>('dashboard')
   const [items, setItems] = useState<Item[]>([])
   const [itemsFilter, setItemsFilter] = useState({ codeOrName: '' })
@@ -149,6 +151,35 @@ function App() {
     setToken(null)
     setCurrentUser(null)
     window.localStorage.removeItem('scm_token')
+  }
+
+  const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    const email = String(fd.get('reg_email') || '').trim()
+    const name = String(fd.get('reg_name') || '').trim()
+    const password = String(fd.get('reg_password') || '')
+    if (!email || !name || !password) {
+      setAuthError('이메일, 이름, 비밀번호를 모두 입력해 주세요.')
+      return
+    }
+    if (password.length < 6) {
+      setAuthError('비밀번호는 6자 이상이어야 합니다.')
+      return
+    }
+    setAuthError(null)
+    try {
+      setIsLoadingAuth(true)
+      await register({ email, name, password })
+      const accessToken = await login(email, password)
+      setToken(accessToken)
+      window.localStorage.setItem('scm_token', accessToken)
+      setShowSignup(false)
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : '회원가입에 실패했습니다.')
+    } finally {
+      setIsLoadingAuth(false)
+    }
   }
 
   const pageMeta = useMemo(() => {
@@ -616,27 +647,55 @@ function App() {
           <main className="app-content">
             <section className="panel">
               <div className="panel-title-row">
-                <h2 className="panel-title">로그인</h2>
+                <h2 className="panel-title">{showSignup ? '회원가입' : '로그인'}</h2>
                 <span className="panel-tag">SCM 접근을 위해 로그인하세요</span>
               </div>
               <p className="panel-description">
-                이미 가입한 사용자는 이메일/비밀번호로 로그인할 수 있습니다. 회원가입 API는 준비되어 있으며,
-                추후 별도 화면으로 연결할 수 있습니다.
+                {showSignup
+                  ? '이메일, 이름, 비밀번호를 입력해 회원가입하세요. 가입 후 자동으로 로그인됩니다.'
+                  : '이메일과 비밀번호로 로그인하세요. 계정이 없으면 아래 회원가입을 이용하세요.'}
               </p>
-              <form className="login-form" onSubmit={handleLogin}>
-                <div className="login-field">
-                  <label htmlFor="email">이메일</label>
-                  <input id="email" name="email" type="email" placeholder="you@example.com" />
-                </div>
-                <div className="login-field">
-                  <label htmlFor="password">비밀번호</label>
-                  <input id="password" name="password" type="password" placeholder="••••••••" />
-                </div>
-                {authError && <div className="login-error">{authError}</div>}
-                <button type="submit" disabled={isLoadingAuth}>
-                  {isLoadingAuth ? '로그인 중...' : '로그인'}
-                </button>
-              </form>
+              {showSignup ? (
+                <form className="login-form" onSubmit={handleRegister}>
+                  <div className="login-field">
+                    <label htmlFor="reg_email">이메일</label>
+                    <input id="reg_email" name="reg_email" type="email" placeholder="you@example.com" required />
+                  </div>
+                  <div className="login-field">
+                    <label htmlFor="reg_name">이름</label>
+                    <input id="reg_name" name="reg_name" type="text" placeholder="홍길동" required />
+                  </div>
+                  <div className="login-field">
+                    <label htmlFor="reg_password">비밀번호</label>
+                    <input id="reg_password" name="reg_password" type="password" placeholder="6자 이상" minLength={6} required />
+                  </div>
+                  {authError && <div className="login-error">{authError}</div>}
+                  <button type="submit" disabled={isLoadingAuth}>
+                    {isLoadingAuth ? '가입 중...' : '회원가입'}
+                  </button>
+                  <button type="button" className="login-form-link" onClick={() => { setShowSignup(false); setAuthError(null); }}>
+                    로그인 화면으로
+                  </button>
+                </form>
+              ) : (
+                <form className="login-form" onSubmit={handleLogin}>
+                  <div className="login-field">
+                    <label htmlFor="email">이메일</label>
+                    <input id="email" name="email" type="email" placeholder="you@example.com" />
+                  </div>
+                  <div className="login-field">
+                    <label htmlFor="password">비밀번호</label>
+                    <input id="password" name="password" type="password" placeholder="••••••••" />
+                  </div>
+                  {authError && <div className="login-error">{authError}</div>}
+                  <button type="submit" disabled={isLoadingAuth}>
+                    {isLoadingAuth ? '로그인 중...' : '로그인'}
+                  </button>
+                  <button type="button" className="login-form-link" onClick={() => { setShowSignup(true); setAuthError(null); }}>
+                    회원가입
+                  </button>
+                </form>
+              )}
             </section>
           </main>
         )}

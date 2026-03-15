@@ -33,6 +33,26 @@ export async function login(email: string, password: string): Promise<string> {
   return data.access_token;
 }
 
+export type RegisterInput = { email: string; name: string; password: string };
+
+export async function register(input: RegisterInput): Promise<MeResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    try {
+      const j = JSON.parse(text);
+      throw new Error(j.detail || text);
+    } catch {
+      throw new Error(text || '회원가입에 실패했습니다.');
+    }
+  }
+  return (await res.json()) as MeResponse;
+}
+
 export type MeResponse = {
   id: number;
   email: string;
