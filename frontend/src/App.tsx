@@ -1,8 +1,40 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { createItem, fetchItems, fetchMe, Item, login, MeResponse } from './api'
+import type { FormEvent } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  createDemandForecast,
+  createProductionPlan,
+  createPurchaseOrder,
+  createPurchaseOrderLine,
+  createStockTransaction,
+  createItem,
+  fetchDemandForecasts,
+  fetchItems,
+  fetchInventories,
+  fetchMe,
+  fetchMrpResults,
+  fetchProductionPlans,
+  fetchPurchaseOrderLines,
+  fetchPurchaseOrders,
+  fetchStockTransactions,
+  fetchWarehouses,
+  login,
+  runMrpCalc,
+} from './api'
+import type {
+  DemandForecast,
+  Inventory,
+  Item,
+  MrpResult,
+  MeResponse,
+  ProductionPlan,
+  PurchaseOrder,
+  PurchaseOrderLine,
+  StockTransaction,
+  Warehouse,
+} from './api'
 import { AlertBar } from './components/AlertBar'
-import { SearchFilter } from './components/SearchFilter'
 import { PaginationControls } from './components/PaginationControls'
+import { SearchFilter } from './components/SearchFilter'
 import './App.css'
 
 type MenuKey =
@@ -35,6 +67,27 @@ function App() {
   const [itemsLoading, setItemsLoading] = useState(false)
   const [globalMessage, setGlobalMessage] = useState<string | null>(null)
   const [globalMessageType, setGlobalMessageType] = useState<'info' | 'error'>('info')
+
+  // 수요예측
+  const [forecasts, setForecasts] = useState<DemandForecast[]>([])
+  const [forecastsLoading, setForecastsLoading] = useState(false)
+  // 생산계획
+  const [productionPlans, setProductionPlans] = useState<ProductionPlan[]>([])
+  const [productionPlansLoading, setProductionPlansLoading] = useState(false)
+  // 재고/입출고
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([])
+  const [inventories, setInventories] = useState<Inventory[]>([])
+  const [inventoriesLoading, setInventoriesLoading] = useState(false)
+  const [stockTransactions, setStockTransactions] = useState<StockTransaction[]>([])
+  const [stockTransactionsLoading, setStockTransactionsLoading] = useState(false)
+  // MRP
+  const [mrpResults, setMrpResults] = useState<MrpResult[]>([])
+  const [mrpResultsLoading, setMrpResultsLoading] = useState(false)
+  // 발주
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([])
+  const [purchaseOrdersLoading, setPurchaseOrdersLoading] = useState(false)
+  const [purchaseOrderLines, setPurchaseOrderLines] = useState<PurchaseOrderLine[]>([])
+  const [selectedPoId, setSelectedPoId] = useState<number | null>(null)
 
   useEffect(() => {
     if (!token) {
@@ -188,6 +241,109 @@ function App() {
       .finally(() => setItemsLoading(false))
   }, [activeMenu])
 
+  useEffect(() => {
+    if (activeMenu !== 'forecast') return
+    setForecastsLoading(true)
+    Promise.all([fetchItems(), fetchDemandForecasts()])
+      .then(([itemsData, forecastsData]) => {
+        setItems(itemsData)
+        setForecasts(forecastsData)
+      })
+      .catch(() => {
+        setGlobalMessageType('error')
+        setGlobalMessage('수요예측 목록을 불러오지 못했습니다.')
+      })
+      .finally(() => setForecastsLoading(false))
+  }, [activeMenu])
+
+  useEffect(() => {
+    if (activeMenu !== 'production') return
+    setProductionPlansLoading(true)
+    Promise.all([fetchItems(), fetchProductionPlans()])
+      .then(([itemsData, plansData]) => {
+        setItems(itemsData)
+        setProductionPlans(plansData)
+      })
+      .catch(() => {
+        setGlobalMessageType('error')
+        setGlobalMessage('생산계획 목록을 불러오지 못했습니다.')
+      })
+      .finally(() => setProductionPlansLoading(false))
+  }, [activeMenu])
+
+  useEffect(() => {
+    if (activeMenu !== 'inventory') return
+    setInventoriesLoading(true)
+    Promise.all([fetchItems(), fetchWarehouses(), fetchInventories()])
+      .then(([itemsData, whData, invData]) => {
+        setItems(itemsData)
+        setWarehouses(whData)
+        setInventories(invData)
+      })
+      .catch(() => {
+        setGlobalMessageType('error')
+        setGlobalMessage('재고 목록을 불러오지 못했습니다.')
+      })
+      .finally(() => setInventoriesLoading(false))
+  }, [activeMenu])
+
+  useEffect(() => {
+    if (activeMenu !== 'stock') return
+    setStockTransactionsLoading(true)
+    Promise.all([fetchItems(), fetchWarehouses(), fetchStockTransactions()])
+      .then(([itemsData, whData, trxData]) => {
+        setItems(itemsData)
+        setWarehouses(whData)
+        setStockTransactions(trxData)
+      })
+      .catch(() => {
+        setGlobalMessageType('error')
+        setGlobalMessage('입출고 이력을 불러오지 못했습니다.')
+      })
+      .finally(() => setStockTransactionsLoading(false))
+  }, [activeMenu])
+
+  useEffect(() => {
+    if (activeMenu !== 'mrp') return
+    setMrpResultsLoading(true)
+    Promise.all([fetchItems(), fetchMrpResults()])
+      .then(([itemsData, mrpData]) => {
+        setItems(itemsData)
+        setMrpResults(mrpData)
+      })
+      .catch(() => {
+        setGlobalMessageType('error')
+        setGlobalMessage('MRP 결과를 불러오지 못했습니다.')
+      })
+      .finally(() => setMrpResultsLoading(false))
+  }, [activeMenu])
+
+  useEffect(() => {
+    if (activeMenu !== 'po' && activeMenu !== 'poPlan') return
+    setPurchaseOrdersLoading(true)
+    Promise.all([fetchItems(), fetchWarehouses(), fetchPurchaseOrders()])
+      .then(([itemsData, whData, poData]) => {
+        setItems(itemsData)
+        setWarehouses(whData)
+        setPurchaseOrders(poData)
+      })
+      .catch(() => {
+        setGlobalMessageType('error')
+        setGlobalMessage('발주 목록을 불러오지 못했습니다.')
+      })
+      .finally(() => setPurchaseOrdersLoading(false))
+  }, [activeMenu])
+
+  useEffect(() => {
+    if (selectedPoId == null) {
+      setPurchaseOrderLines([])
+      return
+    }
+    fetchPurchaseOrderLines(selectedPoId)
+      .then(setPurchaseOrderLines)
+      .catch(() => setPurchaseOrderLines([]))
+  }, [selectedPoId])
+
   const filteredItems = useMemo(() => {
     const keyword = itemsFilter.codeOrName.trim().toLowerCase()
     let data = items
@@ -250,6 +406,189 @@ function App() {
     }
   }
 
+  const handleCreateForecast = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    const item_id = Number(fd.get('forecast_item_id'))
+    const period_start = String(fd.get('period_start') || '').trim()
+    const period_end = String(fd.get('period_end') || '').trim()
+    const quantity = Number(fd.get('quantity') || 0)
+    const method = String(fd.get('method') || '').trim() || undefined
+    if (!item_id || !period_start || !period_end || Number.isNaN(quantity)) {
+      setGlobalMessageType('error')
+      setGlobalMessage('품목, 기간, 수량을 입력해 주세요.')
+      return
+    }
+    try {
+      const created = await createDemandForecast({
+        item_id,
+        period_start,
+        period_end,
+        quantity,
+        method: method || null,
+      })
+      setForecasts((prev) => [created, ...prev])
+      e.currentTarget.reset()
+      setGlobalMessageType('info')
+      setGlobalMessage('수요예측이 등록되었습니다.')
+    } catch (err) {
+      setGlobalMessageType('error')
+      setGlobalMessage(err instanceof Error ? err.message : '수요예측 등록에 실패했습니다.')
+    }
+  }
+
+  const handleCreateProductionPlan = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    const item_id = Number(fd.get('plan_item_id'))
+    const period_start = String(fd.get('plan_period_start') || '').trim()
+    const period_end = String(fd.get('plan_period_end') || '').trim()
+    const quantity = Number(fd.get('plan_quantity') || 0)
+    const status = String(fd.get('plan_status') || 'DRAFT').trim()
+    const version = String(fd.get('plan_version') || '').trim() || null
+    if (!item_id || !period_start || !period_end || Number.isNaN(quantity)) {
+      setGlobalMessageType('error')
+      setGlobalMessage('품목, 기간, 수량을 입력해 주세요.')
+      return
+    }
+    try {
+      const created = await createProductionPlan({
+        item_id,
+        period_start,
+        period_end,
+        quantity,
+        status,
+        version,
+      })
+      setProductionPlans((prev) => [created, ...prev])
+      e.currentTarget.reset()
+      setGlobalMessageType('info')
+      setGlobalMessage('생산계획이 등록되었습니다.')
+    } catch (err) {
+      setGlobalMessageType('error')
+      setGlobalMessage(err instanceof Error ? err.message : '생산계획 등록에 실패했습니다.')
+    }
+  }
+
+  const handleCreateStockTransaction = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    const item_id = Number(fd.get('trx_item_id'))
+    const warehouse_id = Number(fd.get('trx_warehouse_id'))
+    const trx_type = String(fd.get('trx_type') || 'IN').trim()
+    const qty = Number(fd.get('trx_qty') || 0)
+    const reason = String(fd.get('trx_reason') || '').trim() || null
+    if (!item_id || !warehouse_id || Number.isNaN(qty) || qty <= 0) {
+      setGlobalMessageType('error')
+      setGlobalMessage('품목, 창고, 수량(0보다 큼)을 입력해 주세요.')
+      return
+    }
+    if (!['IN', 'OUT', 'ADJUST'].includes(trx_type)) {
+      setGlobalMessageType('error')
+      setGlobalMessage('구분은 IN/OUT/ADJUST 중 하나여야 합니다.')
+      return
+    }
+    try {
+      const created = await createStockTransaction({
+        item_id,
+        warehouse_id,
+        trx_type,
+        qty,
+        reason,
+      })
+      setStockTransactions((prev) => [created, ...prev])
+      e.currentTarget.reset()
+      setGlobalMessageType('info')
+      setGlobalMessage('입출고가 등록되었습니다.')
+    } catch (err) {
+      setGlobalMessageType('error')
+      setGlobalMessage(err instanceof Error ? err.message : '입출고 등록에 실패했습니다.')
+    }
+  }
+
+  const handleRunMrpCalc = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    const item_id = Number(fd.get('mrp_item_id'))
+    const required_qty = Number(fd.get('mrp_required_qty') || 0)
+    const required_date = String(fd.get('mrp_required_date') || '').trim() || null
+    if (!item_id || Number.isNaN(required_qty) || required_qty < 0) {
+      setGlobalMessageType('error')
+      setGlobalMessage('품목과 필요수량(0 이상)을 입력해 주세요.')
+      return
+    }
+    try {
+      const created = await runMrpCalc({ item_id, required_qty, required_date })
+      setMrpResults((prev) => [created, ...prev])
+      e.currentTarget.reset()
+      setGlobalMessageType('info')
+      setGlobalMessage('MRP 계산이 반영되었습니다.')
+    } catch (err) {
+      setGlobalMessageType('error')
+      setGlobalMessage(err instanceof Error ? err.message : 'MRP 계산에 실패했습니다.')
+    }
+  }
+
+  const handleCreatePurchaseOrder = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    const order_no = String(fd.get('po_order_no') || '').trim()
+    const vendor_name = String(fd.get('po_vendor_name') || '').trim()
+    const order_date = String(fd.get('po_order_date') || '').trim()
+    const status = String(fd.get('po_status') || 'REQUESTED').trim()
+    if (!order_no || !vendor_name || !order_date) {
+      setGlobalMessageType('error')
+      setGlobalMessage('발주번호, 공급사, 발주일을 입력해 주세요.')
+      return
+    }
+    try {
+      const created = await createPurchaseOrder({ order_no, vendor_name, order_date, status })
+      setPurchaseOrders((prev) => [created, ...prev])
+      e.currentTarget.reset()
+      setGlobalMessageType('info')
+      setGlobalMessage('발주가 등록되었습니다.')
+    } catch (err) {
+      setGlobalMessageType('error')
+      setGlobalMessage(err instanceof Error ? err.message : '발주 등록에 실패했습니다.')
+    }
+  }
+
+  const handleCreatePurchaseOrderLine = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (selectedPoId == null) {
+      setGlobalMessageType('error')
+      setGlobalMessage('발주를 먼저 선택해 주세요.')
+      return
+    }
+    const fd = new FormData(e.currentTarget)
+    const item_id = Number(fd.get('pol_item_id'))
+    const order_qty = Number(fd.get('pol_order_qty') || 0)
+    const due_date = String(fd.get('pol_due_date') || '').trim()
+    if (!item_id || Number.isNaN(order_qty) || order_qty <= 0 || !due_date) {
+      setGlobalMessageType('error')
+      setGlobalMessage('품목, 수량, 납기일을 입력해 주세요.')
+      return
+    }
+    try {
+      const created = await createPurchaseOrderLine(selectedPoId, {
+        purchase_order_id: selectedPoId,
+        item_id,
+        order_qty,
+        due_date,
+      })
+      setPurchaseOrderLines((prev) => [created, ...prev])
+      e.currentTarget.reset()
+      setGlobalMessageType('info')
+      setGlobalMessage('발주 라인이 등록되었습니다.')
+    } catch (err) {
+      setGlobalMessageType('error')
+      setGlobalMessage(err instanceof Error ? err.message : '발주 라인 등록에 실패했습니다.')
+    }
+  }
+
+  const itemLabel = (id: number) => items.find((i) => i.id === id)?.name ?? `#${id}`
+  const warehouseLabel = (id: number) => warehouses.find((w) => w.id === id)?.name ?? `#${id}`
+
   return (
     <div className="app">
       <header className="app-header">
@@ -302,6 +641,7 @@ function App() {
           </main>
         )}
         {currentUser && (
+        <>
         <nav className="app-sidebar">
           <div className="sidebar-section">
             <div className="sidebar-section-title">메인</div>
@@ -552,31 +892,152 @@ function App() {
             )}
 
             {activeMenu === 'forecast' && (
-              <>
-                <div className="pill-row">
-                  <span className="pill">기간 단위: 월/주/일 선택</span>
-                  <span className="pill">과거 실적 조회</span>
-                  <span className="pill">간단 예측(이동평균 등)</span>
+              <div className="two-column-layout">
+                <div>
+                  <strong>수요예측 등록</strong>
+                  <form className="login-form" onSubmit={handleCreateForecast} style={{ marginTop: 8 }}>
+                    <div className="login-field">
+                      <label>품목</label>
+                      <select name="forecast_item_id" required>
+                        <option value="">선택</option>
+                        {items.map((i) => (
+                          <option key={i.id} value={i.id}>{i.code} {i.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="login-field">
+                      <label>기간 시작</label>
+                      <input name="period_start" type="date" required />
+                    </div>
+                    <div className="login-field">
+                      <label>기간 종료</label>
+                      <input name="period_end" type="date" required />
+                    </div>
+                    <div className="login-field">
+                      <label>수량</label>
+                      <input name="quantity" type="number" min={0} required />
+                    </div>
+                    <div className="login-field">
+                      <label>방법</label>
+                      <input name="method" type="text" placeholder="MANUAL 등" />
+                    </div>
+                    <button type="submit">등록</button>
+                  </form>
                 </div>
-                <div className="table-placeholder">
-                  상단에는 기간/제품 필터, 하단에는 제품×기간 그리드가 들어갑니다. 예측 수량을 직접
-                  입력하거나, 버튼으로 자동 계산한 값을 채울 수 있습니다.
+                <div>
+                  <strong>수요예측 목록</strong>
+                  <div className="table-placeholder" style={{ marginTop: 8 }}>
+                    {forecastsLoading ? (
+                      <div>불러오는 중...</div>
+                    ) : (
+                      <table className="simple-table">
+                        <thead>
+                          <tr>
+                            <th>품목</th>
+                            <th>기간시작</th>
+                            <th>기간종료</th>
+                            <th>수량</th>
+                            <th>방법</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {forecasts.map((f) => (
+                            <tr key={f.id}>
+                              <td>{itemLabel(f.item_id)}</td>
+                              <td>{f.period_start}</td>
+                              <td>{f.period_end}</td>
+                              <td>{f.quantity}</td>
+                              <td>{f.method ?? '-'}</td>
+                            </tr>
+                          ))}
+                          {forecasts.length === 0 && (
+                            <tr><td colSpan={5}>등록된 수요예측이 없습니다.</td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
                 </div>
-              </>
+              </div>
             )}
 
             {activeMenu === 'production' && (
-              <>
-                <div className="pill-row">
-                  <span className="pill">예측 불러오기 → 계획 생성</span>
-                  <span className="pill">버전 관리(V1/V2)</span>
-                  <span className="pill">임시/확정 상태</span>
+              <div className="two-column-layout">
+                <div>
+                  <strong>생산계획 등록</strong>
+                  <form className="login-form" onSubmit={handleCreateProductionPlan} style={{ marginTop: 8 }}>
+                    <div className="login-field">
+                      <label>품목</label>
+                      <select name="plan_item_id" required>
+                        <option value="">선택</option>
+                        {items.map((i) => (
+                          <option key={i.id} value={i.id}>{i.code} {i.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="login-field">
+                      <label>기간 시작</label>
+                      <input name="plan_period_start" type="date" required />
+                    </div>
+                    <div className="login-field">
+                      <label>기간 종료</label>
+                      <input name="plan_period_end" type="date" required />
+                    </div>
+                    <div className="login-field">
+                      <label>수량</label>
+                      <input name="plan_quantity" type="number" min={0} required />
+                    </div>
+                    <div className="login-field">
+                      <label>상태</label>
+                      <select name="plan_status">
+                        <option value="DRAFT">DRAFT</option>
+                        <option value="CONFIRMED">CONFIRMED</option>
+                      </select>
+                    </div>
+                    <div className="login-field">
+                      <label>버전</label>
+                      <input name="plan_version" type="text" placeholder="V1" />
+                    </div>
+                    <button type="submit">등록</button>
+                  </form>
                 </div>
-                <div className="table-placeholder">
-                  수요예측에서 불러온 계획 초안을 수정하고, 확정 버튼으로 상태를 변경하는 테이블이
-                  들어갑니다.
+                <div>
+                  <strong>생산계획 목록</strong>
+                  <div className="table-placeholder" style={{ marginTop: 8 }}>
+                    {productionPlansLoading ? (
+                      <div>불러오는 중...</div>
+                    ) : (
+                      <table className="simple-table">
+                        <thead>
+                          <tr>
+                            <th>품목</th>
+                            <th>기간시작</th>
+                            <th>기간종료</th>
+                            <th>수량</th>
+                            <th>상태</th>
+                            <th>버전</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {productionPlans.map((p) => (
+                            <tr key={p.id}>
+                              <td>{itemLabel(p.item_id)}</td>
+                              <td>{p.period_start}</td>
+                              <td>{p.period_end}</td>
+                              <td>{p.quantity}</td>
+                              <td>{p.status}</td>
+                              <td>{p.version ?? '-'}</td>
+                            </tr>
+                          ))}
+                          {productionPlans.length === 0 && (
+                            <tr><td colSpan={6}>등록된 생산계획이 없습니다.</td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
                 </div>
-              </>
+              </div>
             )}
 
             {activeMenu === 'bomCalc' && (
@@ -587,40 +1048,322 @@ function App() {
             )}
 
             {activeMenu === 'mrp' && (
-              <div className="table-placeholder">
-                품목별 총 소요량, 현재 재고, 안전재고, 부족수량, 제안 발주일, 필요 납기일을 보여주는
-                MRP 결과 그리드입니다. 선택 행을 발주 계획으로 전송하는 체크박스가 포함됩니다.
+              <div className="two-column-layout">
+                <div>
+                  <strong>MRP 계산 실행</strong>
+                  <form className="login-form" onSubmit={handleRunMrpCalc} style={{ marginTop: 8 }}>
+                    <div className="login-field">
+                      <label>품목</label>
+                      <select name="mrp_item_id" required>
+                        <option value="">선택</option>
+                        {items.map((i) => (
+                          <option key={i.id} value={i.id}>{i.code} {i.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="login-field">
+                      <label>필요수량</label>
+                      <input name="mrp_required_qty" type="number" min={0} required />
+                    </div>
+                    <div className="login-field">
+                      <label>필요일 (선택)</label>
+                      <input name="mrp_required_date" type="date" />
+                    </div>
+                    <button type="submit">MRP 계산</button>
+                  </form>
+                </div>
+                <div>
+                  <strong>MRP 결과</strong>
+                  <div className="table-placeholder" style={{ marginTop: 8 }}>
+                    {mrpResultsLoading ? (
+                      <div>불러오는 중...</div>
+                    ) : (
+                      <table className="simple-table">
+                        <thead>
+                          <tr>
+                            <th>품목</th>
+                            <th>필요수량</th>
+                            <th>재고</th>
+                            <th>안전재고</th>
+                            <th>부족수량</th>
+                            <th>제안발주일</th>
+                            <th>필요일</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {mrpResults.map((r) => (
+                            <tr key={r.id}>
+                              <td>{itemLabel(r.item_id)}</td>
+                              <td>{r.required_qty}</td>
+                              <td>{r.on_hand_qty}</td>
+                              <td>{r.safety_stock_qty}</td>
+                              <td>{r.shortage_qty}</td>
+                              <td>{r.suggested_order_date ?? '-'}</td>
+                              <td>{r.required_date ?? '-'}</td>
+                            </tr>
+                          ))}
+                          {mrpResults.length === 0 && (
+                            <tr><td colSpan={7}>MRP 결과가 없습니다. 계산을 실행해 주세요.</td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
-            {activeMenu === 'poPlan' && (
-              <div className="table-placeholder">
-                MRP에서 넘어온 발주 제안 리스트를 보여주고, 공급사 기준으로 묶어서 발주서를 생성하는
-                화면입니다.
-              </div>
-            )}
-
-            {activeMenu === 'po' && (
-              <div className="table-placeholder">
-                발주번호, 공급사, 발주일, 납기일, 상태(요청/발주/입고완료)를 관리하는 발주서 목록
-                테이블입니다.
+            {(activeMenu === 'poPlan' || activeMenu === 'po') && (
+              <div className="two-column-layout">
+                <div>
+                  <strong>발주 등록</strong>
+                  <form className="login-form" onSubmit={handleCreatePurchaseOrder} style={{ marginTop: 8 }}>
+                    <div className="login-field">
+                      <label>발주번호</label>
+                      <input name="po_order_no" type="text" required placeholder="PO-001" />
+                    </div>
+                    <div className="login-field">
+                      <label>공급사</label>
+                      <input name="po_vendor_name" type="text" required />
+                    </div>
+                    <div className="login-field">
+                      <label>발주일</label>
+                      <input name="po_order_date" type="date" required />
+                    </div>
+                    <div className="login-field">
+                      <label>상태</label>
+                      <select name="po_status">
+                        <option value="REQUESTED">REQUESTED</option>
+                        <option value="ORDERED">ORDERED</option>
+                        <option value="RECEIVED">RECEIVED</option>
+                      </select>
+                    </div>
+                    <button type="submit">발주 등록</button>
+                  </form>
+                  {activeMenu === 'po' && (
+                    <>
+                      <strong style={{ marginTop: 16, display: 'block' }}>발주 라인 추가</strong>
+                      <p style={{ fontSize: 12, color: '#6b7280' }}>아래 목록에서 발주를 선택한 뒤 등록하세요.</p>
+                      <form className="login-form" onSubmit={handleCreatePurchaseOrderLine} style={{ marginTop: 8 }}>
+                        <div className="login-field">
+                          <label>발주 선택</label>
+                          <select
+                            value={selectedPoId ?? ''}
+                            onChange={(e) => setSelectedPoId(e.target.value ? Number(e.target.value) : null)}
+                          >
+                            <option value="">선택</option>
+                            {purchaseOrders.map((po) => (
+                              <option key={po.id} value={po.id}>{po.order_no} {po.vendor_name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="login-field">
+                          <label>품목</label>
+                          <select name="pol_item_id" required>
+                            <option value="">선택</option>
+                            {items.map((i) => (
+                              <option key={i.id} value={i.id}>{i.code} {i.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="login-field">
+                          <label>수량</label>
+                          <input name="pol_order_qty" type="number" min={0.01} step="any" required />
+                        </div>
+                        <div className="login-field">
+                          <label>납기일</label>
+                          <input name="pol_due_date" type="date" required />
+                        </div>
+                        <button type="submit" disabled={selectedPoId == null}>라인 추가</button>
+                      </form>
+                    </>
+                  )}
+                </div>
+                <div>
+                  <strong>발주 목록</strong>
+                  <div className="table-placeholder" style={{ marginTop: 8 }}>
+                    {purchaseOrdersLoading ? (
+                      <div>불러오는 중...</div>
+                    ) : (
+                      <table className="simple-table">
+                        <thead>
+                          <tr>
+                            <th>발주번호</th>
+                            <th>공급사</th>
+                            <th>발주일</th>
+                            <th>상태</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {purchaseOrders.map((po) => (
+                            <tr
+                              key={po.id}
+                              onClick={() => activeMenu === 'po' && setSelectedPoId(po.id)}
+                              style={{ cursor: activeMenu === 'po' ? 'pointer' : undefined }}
+                            >
+                              <td>{po.order_no}</td>
+                              <td>{po.vendor_name}</td>
+                              <td>{po.order_date}</td>
+                              <td>{po.status}</td>
+                            </tr>
+                          ))}
+                          {purchaseOrders.length === 0 && (
+                            <tr><td colSpan={4}>등록된 발주가 없습니다.</td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                  {activeMenu === 'po' && selectedPoId != null && (
+                    <>
+                      <strong style={{ marginTop: 12, display: 'block' }}>발주 라인 (선택된 발주)</strong>
+                      <div className="table-placeholder" style={{ marginTop: 8 }}>
+                        <table className="simple-table">
+                          <thead>
+                            <tr>
+                              <th>품목</th>
+                              <th>수량</th>
+                              <th>납기일</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {purchaseOrderLines.map((l) => (
+                              <tr key={l.id}>
+                                <td>{itemLabel(l.item_id)}</td>
+                                <td>{l.order_qty}</td>
+                                <td>{l.due_date}</td>
+                              </tr>
+                            ))}
+                            {purchaseOrderLines.length === 0 && (
+                              <tr><td colSpan={3}>라인이 없습니다.</td></tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             )}
 
             {activeMenu === 'inventory' && (
-              <div className="table-placeholder">
-                품목/창고별 재고와 안전재고 대비 상태(정상/임박/품절/과잉)를 색상으로 표시하는 재고
-                현황 그리드입니다.
+              <div>
+                <strong>재고 현황 (품목/창고별 스냅샷)</strong>
+                <div className="table-placeholder" style={{ marginTop: 8 }}>
+                  {inventoriesLoading ? (
+                    <div>불러오는 중...</div>
+                  ) : (
+                    <table className="simple-table">
+                      <thead>
+                        <tr>
+                          <th>품목</th>
+                          <th>창고</th>
+                          <th>수량</th>
+                          <th>기준일</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {inventories.map((inv) => (
+                          <tr key={inv.id}>
+                            <td>{itemLabel(inv.item_id)}</td>
+                            <td>{warehouseLabel(inv.warehouse_id)}</td>
+                            <td>{inv.qty}</td>
+                            <td>{inv.as_of_date}</td>
+                          </tr>
+                        ))}
+                        {inventories.length === 0 && (
+                          <tr><td colSpan={4}>재고 데이터가 없습니다.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
               </div>
             )}
 
             {activeMenu === 'stock' && (
-              <div className="table-placeholder">
-                상단에는 입고/출고 입력 폼, 하단에는 최근 입출고 이력이 표로 나오는 구조입니다.
+              <div className="two-column-layout">
+                <div>
+                  <strong>입출고 등록</strong>
+                  <form className="login-form" onSubmit={handleCreateStockTransaction} style={{ marginTop: 8 }}>
+                    <div className="login-field">
+                      <label>품목</label>
+                      <select name="trx_item_id" required>
+                        <option value="">선택</option>
+                        {items.map((i) => (
+                          <option key={i.id} value={i.id}>{i.code} {i.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="login-field">
+                      <label>창고</label>
+                      <select name="trx_warehouse_id" required>
+                        <option value="">선택</option>
+                        {warehouses.map((w) => (
+                          <option key={w.id} value={w.id}>{w.code} {w.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="login-field">
+                      <label>구분</label>
+                      <select name="trx_type">
+                        <option value="IN">입고</option>
+                        <option value="OUT">출고</option>
+                        <option value="ADJUST">조정</option>
+                      </select>
+                    </div>
+                    <div className="login-field">
+                      <label>수량</label>
+                      <input name="trx_qty" type="number" min={0.01} step="any" required />
+                    </div>
+                    <div className="login-field">
+                      <label>사유</label>
+                      <input name="trx_reason" type="text" placeholder="선택" />
+                    </div>
+                    <button type="submit">등록</button>
+                  </form>
+                </div>
+                <div>
+                  <strong>입출고 이력</strong>
+                  <div className="table-placeholder" style={{ marginTop: 8 }}>
+                    {stockTransactionsLoading ? (
+                      <div>불러오는 중...</div>
+                    ) : (
+                      <table className="simple-table">
+                        <thead>
+                          <tr>
+                            <th>품목</th>
+                            <th>창고</th>
+                            <th>구분</th>
+                            <th>수량</th>
+                            <th>사유</th>
+                            <th>일시</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {stockTransactions.slice(0, 50).map((t) => (
+                            <tr key={t.id}>
+                              <td>{itemLabel(t.item_id)}</td>
+                              <td>{warehouseLabel(t.warehouse_id)}</td>
+                              <td>{t.trx_type}</td>
+                              <td>{t.qty}</td>
+                              <td>{t.reason ?? '-'}</td>
+                              <td>{t.trx_time}</td>
+                            </tr>
+                          ))}
+                          {stockTransactions.length === 0 && (
+                            <tr><td colSpan={6}>입출고 이력이 없습니다.</td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </section>
         </main>
+        </>
         )}
       </div>
     </div>
