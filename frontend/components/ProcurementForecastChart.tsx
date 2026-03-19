@@ -17,6 +17,15 @@ type Props = {
 };
 
 export function ProcurementForecastChart({ data }: Props) {
+  if (data.length === 0) {
+    return (
+      <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+        <h3 className="mb-2 text-base font-semibold text-slate-900">Order Forecast</h3>
+        <p className="text-sm text-slate-500">데이터가 없습니다. (확정된 생산계획이 필요합니다.)</p>
+      </article>
+    );
+  }
+
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
       <h3 className="mb-4 text-base font-semibold text-slate-900">Order Forecast</h3>
