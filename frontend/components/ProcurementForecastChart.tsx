@@ -20,7 +20,7 @@ export function ProcurementForecastChart({ data }: Props) {
   if (data.length === 0) {
     return (
       <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
-        <h3 className="mb-2 text-base font-semibold text-slate-900">Order Forecast</h3>
+        <h3 className="mb-2 text-base font-semibold text-slate-900">기간별 발주 계획</h3>
         <p className="text-sm text-slate-500">데이터가 없습니다. (확정된 생산계획이 필요합니다.)</p>
       </article>
     );
@@ -28,7 +28,7 @@ export function ProcurementForecastChart({ data }: Props) {
 
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
-      <h3 className="mb-4 text-base font-semibold text-slate-900">Order Forecast</h3>
+      <h3 className="mb-4 text-base font-semibold text-slate-900">기간별 발주 계획</h3>
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
@@ -37,9 +37,9 @@ export function ProcurementForecastChart({ data }: Props) {
             <YAxis />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="m3" stroke="#2563eb" strokeWidth={2} dot={false} name="3 months" />
-            <Line type="monotone" dataKey="m6" stroke="#f59e0b" strokeWidth={2} dot={false} name="6 months" />
-            <Line type="monotone" dataKey="m12" stroke="#22c55e" strokeWidth={2} dot={false} name="1 year" />
+            <Line type="monotone" dataKey="m3" stroke="#2563eb" strokeWidth={2} dot={false} name="3개월" />
+            <Line type="monotone" dataKey="m6" stroke="#f59e0b" strokeWidth={2} dot={false} name="6개월" />
+            <Line type="monotone" dataKey="m12" stroke="#22c55e" strokeWidth={2} dot={false} name="1년" />
           </LineChart>
         </ResponsiveContainer>
       </div>

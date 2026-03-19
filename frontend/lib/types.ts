@@ -5,6 +5,17 @@ export type Product = {
   name: string;
 };
 
+export type Item = {
+  id: number;
+  code: string;
+  name: string;
+  type: string; // PRODUCT / RAW
+  uom: string;
+  safety_stock_qty?: number | null;
+  lead_time_days?: number | null;
+  is_active?: boolean | null;
+};
+
 export type MaterialRow = {
   materialId: string;
   materialName: string;

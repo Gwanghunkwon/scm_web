@@ -26,7 +26,7 @@ export function InventoryRequiredChart({ rows }: Props) {
     return (
       <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
         <h3 className="mb-2 text-base font-semibold text-slate-900">
-          Current Stock vs Required Stock
+          현재 재고 vs 필요량
         </h3>
         <p className="text-sm text-slate-500">데이터가 없습니다. (확정된 생산계획이 필요합니다.)</p>
       </article>
@@ -35,7 +35,7 @@ export function InventoryRequiredChart({ rows }: Props) {
 
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
-      <h3 className="mb-4 text-base font-semibold text-slate-900">Current Stock vs Required Stock</h3>
+      <h3 className="mb-4 text-base font-semibold text-slate-900">현재 재고 vs 필요량</h3>
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>

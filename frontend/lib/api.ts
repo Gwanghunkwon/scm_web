@@ -1,15 +1,20 @@
 import { buildMockDashboard } from "./mock-data";
-import { DashboardResponse, Period } from "./types";
+import { DashboardResponse, Item, Period } from "./types";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
 
 export async function getDashboardData(
   period: Period,
-  productId: string
+  productId: string,
+  productionQty: number
 ): Promise<DashboardResponse> {
   try {
-    const params = new URLSearchParams({ period, product_id: productId });
+    const params = new URLSearchParams({
+      period,
+      product_id: productId,
+      production_qty: String(productionQty),
+    });
     const res = await fetch(`${API_BASE_URL}/api/dashboard?${params.toString()}`, {
       cache: "no-store",
     });
@@ -60,4 +65,10 @@ export async function getDashboardData(
   } catch {
     return buildMockDashboard(period, productId);
   }
+}
+
+export async function fetchItems(): Promise<Item[]> {
+  const res = await fetch(`${API_BASE_URL}/api/items`, { cache: "no-store" });
+  if (!res.ok) throw new Error("품목 목록을 가져오지 못했습니다.");
+  return (await res.json()) as Item[];
 }

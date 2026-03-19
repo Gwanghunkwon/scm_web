@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 
 from core.database import get_db
 from models.item import Item
-from routers.auth_router import require_role
 from schemas.item import ItemCreate, ItemRead
 
 
@@ -15,7 +14,7 @@ def list_items(db: Session = Depends(get_db)):
     return db.query(Item).all()
 
 
-@router.post("", response_model=ItemRead, dependencies=[Depends(require_role("ADMIN"))])
+@router.post("", response_model=ItemRead)
 def create_item(payload: ItemCreate, db: Session = Depends(get_db)):
     exists = db.query(Item).filter(Item.code == payload.code).first()
     if exists:
@@ -47,7 +46,6 @@ def get_item(item_id: int, db: Session = Depends(get_db)):
 @router.put(
     "/{item_id}",
     response_model=ItemRead,
-    dependencies=[Depends(require_role("ADMIN"))],
 )
 def update_item(item_id: int, payload: ItemCreate, db: Session = Depends(get_db)):
     item = db.query(Item).get(item_id)
@@ -76,7 +74,6 @@ def update_item(item_id: int, payload: ItemCreate, db: Session = Depends(get_db)
 @router.delete(
     "/{item_id}",
     status_code=204,
-    dependencies=[Depends(require_role("ADMIN"))],
 )
 def delete_item(item_id: int, db: Session = Depends(get_db)):
     item = db.query(Item).get(item_id)

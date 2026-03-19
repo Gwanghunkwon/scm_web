@@ -8,10 +8,10 @@ type Props = {
 
 export function KpiCards({ data }: Props) {
   const cards = [
-    { title: "Low Stock Items", value: data.totalShortageMaterials.toLocaleString() },
-    { title: "Total Order Needed", value: `${data.totalRequiredProcurementQty.toLocaleString()} kg` },
-    { title: "Estimated Cost", value: `₩${data.estimatedProcurementCost.toLocaleString()}` },
-    { title: "Most Critical", value: data.mostCriticalMaterial },
+    { title: "부족 원재료 수", value: data.totalShortageMaterials.toLocaleString() },
+    { title: "총 발주 필요량", value: data.totalRequiredProcurementQty.toLocaleString() },
+    { title: "예상 발주 비용(옵션)", value: `₩${data.estimatedProcurementCost.toLocaleString()}` },
+    { title: "가장 중요한 부족 품목", value: data.mostCriticalMaterial },
   ];
 
   return (

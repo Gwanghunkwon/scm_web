@@ -38,25 +38,27 @@ export function ShortageTable({ rows, onRowClick }: Props) {
 
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
-      <h3 className="mb-4 text-base font-semibold text-slate-900">Top Shortages & Order Recommendations</h3>
+      <h3 className="mb-4 text-base font-semibold text-slate-900">
+        원재료 부족 현황 & 권장 발주량
+      </h3>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-left text-slate-500">
               <th className="px-3 py-2">
-                <button type="button" onClick={() => toggleSort("materialName")}>Material</button>
+                <button type="button" onClick={() => toggleSort("materialName")}>원재료</button>
               </th>
               <th className="px-3 py-2">
-                <button type="button" onClick={() => toggleSort("currentStock")}>Current Stock</button>
+                <button type="button" onClick={() => toggleSort("currentStock")}>현재 재고</button>
               </th>
               <th className="px-3 py-2">
-                <button type="button" onClick={() => toggleSort("requiredQty")}>Required Qty</button>
+                <button type="button" onClick={() => toggleSort("requiredQty")}>필요량</button>
               </th>
               <th className="px-3 py-2">
-                <button type="button" onClick={() => toggleSort("shortageQty")}>Shortage</button>
+                <button type="button" onClick={() => toggleSort("shortageQty")}>부족</button>
               </th>
               <th className="px-3 py-2">
-                <button type="button" onClick={() => toggleSort("suggestedOrderQty")}>Order Suggestion</button>
+                <button type="button" onClick={() => toggleSort("suggestedOrderQty")}>권장 발주량</button>
               </th>
             </tr>
           </thead>

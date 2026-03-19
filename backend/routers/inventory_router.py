@@ -16,6 +16,22 @@ def list_inventories(db: Session = Depends(get_db)):
 
 @router.post("", response_model=InventoryRead)
 def create_inventory(payload: InventoryCreate, db: Session = Depends(get_db)):
+    # 같은 item_id/warehouse_id/as_of_date 조합이 이미 있으면 qty를 갱신한다.
+    existing = (
+        db.query(Inventory)
+        .filter(
+            Inventory.item_id == payload.item_id,
+            Inventory.warehouse_id == payload.warehouse_id,
+            Inventory.as_of_date == payload.as_of_date,
+        )
+        .first()
+    )
+    if existing:
+        existing.qty = payload.qty
+        db.commit()
+        db.refresh(existing)
+        return existing
+
     inv = Inventory(
         item_id=payload.item_id,
         warehouse_id=payload.warehouse_id,
