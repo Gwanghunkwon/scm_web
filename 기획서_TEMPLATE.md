@@ -125,7 +125,21 @@
 - **상세/팝업 모달**: 품목, BOM, 발주서, 생산계획 상세 정보 확인 및 수정
 - **알림/배지 컴포넌트**: 품절 임박, 지연 발주, 과잉재고 등 중요 이슈를 시각적으로 표시
 
-### 4.3 사용자 플로우
+### 4.3 대시보드 시안 반영(첨부 이미지 기준)
+- **레이아웃**
+  - 상단: KPI 카드 4개(부족 품목 수, 총 발주 필요량, 예상 비용, 최중요 부족 품목)
+  - 중단: 좌측 `Current Stock vs Required Stock` 막대 차트, 우측 `Order Forecast` 선 차트
+  - 하단: `Top Shortages & Order Recommendations` 테이블
+- **인터랙션**
+  - 기간 토글(3M/6M/12M)로 KPI/차트/테이블 동시 갱신
+  - Product 드롭다운 필터로 품목군별 집계 전환
+  - 부족 품목 행 클릭 시 상세 모달 표시(초기 버전은 플레이스홀더 허용)
+- **디자인 시스템**
+  - Tailwind CSS 기반, 카드 `rounded-2xl`, soft shadow, 넓은 여백
+  - 색상 규칙: 재고(Blue), 필요량(Gray), 부족(Red), 정상(Green)
+  - 미니멀 SaaS 톤(Stripe/Linear 스타일), 정보 밀도는 높되 시각적 잡음 최소화
+
+### 4.4 사용자 플로우
 ```
 [로그인]
   ↓
@@ -163,8 +177,10 @@
 
 ## 6. 기술 스택
 ### 6.1 프론트엔드
-- React 또는 Vue + TypeScript
-- UI 라이브러리: Ant Design / MUI / Element 등 중 택1
+- **Next.js(App Router) + React + TypeScript**
+- **Tailwind CSS**(디자인 시스템), **Recharts**(차트)
+- 컴포넌트 분리: KPI 카드, 차트, 부족 테이블, 필터/토글, 상세 모달
+- 반응형 기준: 모바일(1열) / 태블릿(2열) / 데스크탑(4열 KPI + 2열 차트)
 
 ### 6.2 백엔드
 - Python FastAPI + Uvicorn
@@ -181,6 +197,14 @@
 - (추천) Render: `backend` FastAPI 자동 배포
 - (필수) Supabase/Neon: PostgreSQL 관리
 - (선택) Cloudflare R2/AWS S3: Excel·첨부 파일 저장
+
+### 6.5 Supabase 연동 전략(구조 우선)
+- 초기 대시보드는 목데이터 우선으로 구현하고, 아래 함수 시그니처로 점진 전환:
+  - `getMaterials()`
+  - `getBOM()`
+  - `calculateShortage()`
+- API/BFF 계층에서 `period`, `product_id`를 받아 집계 응답(`kpis`, `stock_vs_required`, `forecast`) 생성
+- 실 운영 전환 시 Supabase 테이블(RLS 포함) + 서버 측 계산 로직으로 교체
 
 ## 7. 수용 기준 (Acceptance Criteria)
 - [ ] 수요예측 → 생산계획 → MRP → 발주 → 입고 → 재고 반영의 기본 플로우를 한 화면 흐름에서 수행할 수 있다.
