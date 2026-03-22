@@ -16,7 +16,8 @@ import type { DashboardResponse, Item } from "@/lib/types";
 export default function DashboardPage() {
   const [period, setPeriod] = useState<Period>("3M");
   const [productId, setProductId] = useState<string>("");
-  const [productionQty, setProductionQty] = useState<number>(0);
+  // 0이면 대시보드 API가 호출되지 않아 화면이 "준비 중"에 멈춤 → 기본값으로 첫 로드 시 바로 계산
+  const [productionQty, setProductionQty] = useState<number>(100);
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [selectedMaterial, setSelectedMaterial] = useState<MaterialRow | null>(null);
   const [productLoading, setProductLoading] = useState(false);
@@ -41,17 +42,35 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (!productId || productionQty <= 0) return;
+    if (!productId) return;
     setCalculating(true);
-    getDashboardData(period, productId, productionQty)
+    getDashboardData(period, productId, Math.max(0, productionQty))
       .then((next) => setData(next))
       .finally(() => setCalculating(false));
   }, [period, productId, productionQty]);
 
-  if (!data) {
+  if (productLoading) {
     return (
-      <main className="mx-auto max-w-7xl p-6">
-        {productLoading ? "품목 불러오는 중..." : "대시보드 데이터 준비 중..."}
+      <main className="mx-auto max-w-7xl p-6 text-slate-600">품목 불러오는 중...</main>
+    );
+  }
+
+  if (productItems.length === 0) {
+    return (
+      <main className="mx-auto max-w-7xl space-y-4 p-6">
+        <h1 className="text-2xl font-semibold text-slate-900">SCM 대시보드</h1>
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          등록된 <strong>제품(PRODUCT)</strong>이 없습니다. 백엔드에서 품목 타입을 PRODUCT로 등록한 뒤
+          페이지를 새로고침하세요.
+        </p>
+      </main>
+    );
+  }
+
+  if (!productId || data === null) {
+    return (
+      <main className="mx-auto max-w-7xl p-6 text-slate-600">
+        {productId ? "대시보드 계산 중..." : "제품을 선택하는 중..."}
       </main>
     );
   }

@@ -21,7 +21,9 @@ export function ProcurementForecastChart({ data }: Props) {
     return (
       <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
         <h3 className="mb-2 text-base font-semibold text-slate-900">기간별 발주 계획</h3>
-        <p className="text-sm text-slate-500">데이터가 없습니다. (확정된 생산계획이 필요합니다.)</p>
+        <p className="text-sm text-slate-500">
+          데이터가 없습니다. 제품·BOM·재고를 등록하고 예상 생산량을 입력해 주세요.
+        </p>
       </article>
     );
   }
