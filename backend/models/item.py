@@ -13,6 +13,7 @@ class Item(Base):
     name = Column(String, nullable=False)
     type = Column(String, nullable=False)  # PRODUCT / RAW
     uom = Column(String, nullable=False)
+    unit_price = Column(Numeric, nullable=True)  # 원재료 단가(선택), 발주 비용 추정용
     safety_stock_qty = Column(Numeric, default=0)
     lead_time_days = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)

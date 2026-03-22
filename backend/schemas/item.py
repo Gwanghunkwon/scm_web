@@ -6,6 +6,7 @@ class ItemBase(BaseModel):
     name: str
     type: str
     uom: str
+    unit_price: float | None = None
     safety_stock_qty: float | None = 0
     lead_time_days: int | None = 0
     is_active: bool = True

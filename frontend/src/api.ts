@@ -81,6 +81,7 @@ export type Item = {
   name: string;
   type: string;
   uom: string;
+  unit_price?: number | null;
   safety_stock_qty: number;
   lead_time_days: number;
   is_active: boolean;
@@ -290,5 +291,45 @@ export async function createPurchaseOrderLine(poId: number, input: PurchaseOrder
     throw new Error(t || '발주 라인 등록에 실패했습니다.');
   }
   return (await res.json()) as PurchaseOrderLine;
+}
+
+// SCM 계산 (다제품 BOM + 재고)
+export type CalculatePlanLine = { product_id: number; planned_quantity: number };
+export type CalculateMaterialSimple = {
+  material_id: string;
+  name: string;
+  unit: string;
+  required: number;
+  stock: number;
+  shortage: number;
+  order: number;
+};
+export type CalculateResponse = {
+  period: string;
+  product_ids: string;
+  materials: CalculateMaterialSimple[];
+  kpis: {
+    total_shortage_materials: number;
+    total_required_procurement_qty: number;
+    estimated_procurement_cost: number;
+    most_critical_material: string;
+  };
+  stock_vs_required: unknown[];
+  forecast: unknown[];
+};
+export async function postCalculate(
+  period: string,
+  productionPlan: CalculatePlanLine[]
+): Promise<CalculateResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/calculate`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ period, production_plan: productionPlan }),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(t || '계산 요청에 실패했습니다.');
+  }
+  return (await res.json()) as CalculateResponse;
 }
 

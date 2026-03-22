@@ -404,6 +404,9 @@ function App() {
     const uom = String(formData.get('uom') || '').trim()
     const safetyStock = Number(formData.get('safety_stock_qty') || '0')
     const leadTime = Number(formData.get('lead_time_days') || '0')
+    const unitPriceRaw = String(formData.get('unit_price') || '').trim()
+    const unit_price =
+      unitPriceRaw === '' ? null : Number(unitPriceRaw.replace(/,/g, ''))
 
     if (!code || !name || !type || !uom) {
       setGlobalMessageType('error')
@@ -415,6 +418,11 @@ function App() {
       setGlobalMessage('안전재고와 리드타임은 숫자(리드타임은 0 이상)여야 합니다.')
       return
     }
+    if (unit_price !== null && Number.isNaN(unit_price)) {
+      setGlobalMessageType('error')
+      setGlobalMessage('단가는 숫자이거나 비워 두세요.')
+      return
+    }
 
     try {
       const created = await createItem({
@@ -422,6 +430,7 @@ function App() {
         name,
         type,
         uom,
+        unit_price,
         safety_stock_qty: safetyStock,
         lead_time_days: leadTime,
         is_active: true,
@@ -875,6 +884,10 @@ function App() {
                       <input id="uom" name="uom" placeholder="EA, KG 등" />
                     </div>
                     <div className="login-field">
+                      <label htmlFor="unit_price">단가 (선택, RAW 발주비용 추정)</label>
+                      <input id="unit_price" name="unit_price" type="text" placeholder="비우면 미사용" />
+                    </div>
+                    <div className="login-field">
                       <label htmlFor="safety_stock_qty">안전재고</label>
                       <input id="safety_stock_qty" name="safety_stock_qty" type="number" defaultValue={0} />
                     </div>
@@ -899,6 +912,7 @@ function App() {
                               <th>이름</th>
                               <th>유형</th>
                               <th>단위</th>
+                              <th>단가</th>
                               <th>안전재고</th>
                               <th>리드타임(일)</th>
                             </tr>
@@ -910,13 +924,14 @@ function App() {
                                 <td>{item.name}</td>
                                 <td>{item.type}</td>
                                 <td>{item.uom}</td>
+                                <td>{item.unit_price ?? '—'}</td>
                                 <td>{item.safety_stock_qty}</td>
                                 <td>{item.lead_time_days}</td>
                               </tr>
                             ))}
                             {pagedItems.length === 0 && (
                               <tr>
-                                <td colSpan={6}>등록된 품목이 없습니다.</td>
+                                <td colSpan={7}>등록된 품목이 없습니다.</td>
                               </tr>
                             )}
                           </tbody>

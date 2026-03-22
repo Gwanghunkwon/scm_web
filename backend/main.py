@@ -1,11 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import inspect, text
 
 from core.config import settings
 from core.database import Base, engine
 from routers import (
     auth_router,
     bom_router,
+    calculate_router,
     dashboard_router,
     demand_forecast_router,
     inventory_router,
@@ -44,6 +46,7 @@ def create_app() -> FastAPI:
     app.include_router(mrp_router.router)
     app.include_router(purchase_order_router.router)
     app.include_router(dashboard_router.router)
+    app.include_router(calculate_router.router)
 
     return app
 
@@ -56,4 +59,13 @@ def on_startup():
     # 필요한 경우 여기서 테이블 생성 (초기 개발용)
     # 운영에서는 Alembic 마이그레이션으로 관리하는 것을 권장
     Base.metadata.create_all(bind=engine)
+    # 기존 SQLite DB에 컬럼이 없을 때만 추가 (create_all은 ALTER 미수행)
+    try:
+        insp = inspect(engine)
+        cols = {c["name"] for c in insp.get_columns("item")}
+        if "unit_price" not in cols:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE item ADD COLUMN unit_price NUMERIC"))
+    except Exception:
+        pass
 

@@ -10,4 +10,5 @@ from . import stock_transaction_router  # noqa: F401
 from . import mrp_router  # noqa: F401
 from . import purchase_order_router  # noqa: F401
 from . import dashboard_router  # noqa: F401
+from . import calculate_router  # noqa: F401
 
