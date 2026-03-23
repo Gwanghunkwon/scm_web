@@ -44,9 +44,13 @@ async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
 
 export async function checkApiHealth(): Promise<{ ok: boolean; detail: string }> {
   try {
-    const res = await fetch(`${API_BASE_URL}/`, { cache: "no-store" });
+    // 루트(/)가 404인 배포가 있어서 실제 사용 엔드포인트(/api/items) 기준으로 체크
+    const res = await fetch(`${API_BASE_URL}/api/items`, { cache: "no-store" });
+    if (res.status === 401 || res.status === 403) {
+      return { ok: true, detail: `인증 필요 (${res.status})` };
+    }
     if (!res.ok) {
-      return { ok: false, detail: `HTTP ${res.status}` };
+      return { ok: false, detail: `HTTP ${res.status} (/api/items)` };
     }
     return { ok: true, detail: "OK" };
   } catch {

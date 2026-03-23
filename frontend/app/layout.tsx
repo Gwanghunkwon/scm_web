@@ -1,7 +1,7 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 
-import { AppNav } from "@/components/AppNav";
+import { AppNav, SideNav } from "@/components/AppNav";
 
 export const metadata: Metadata = {
   title: "SCM MVP",
@@ -15,8 +15,11 @@ export default function RootLayout({
     <html lang="ko">
       <body className="min-h-screen bg-slate-50 text-slate-900">
         <AppNav />
-        <main className="mx-auto -mt-[72px] max-w-[1400px] px-4 pb-6 md:px-6">
-          <div className="md:ml-60">{children}</div>
+        <main className="mx-auto max-w-[1400px] px-4 py-4 md:px-6">
+          <div className="flex gap-4">
+            <SideNav />
+            <section className="min-w-0 flex-1">{children}</section>
+          </div>
         </main>
       </body>
     </html>
