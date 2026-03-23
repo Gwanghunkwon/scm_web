@@ -120,12 +120,6 @@ export default function DashboardPage() {
             품목 등록 (제품·원재료)
           </Link>
           <Link
-            href="/warehouses"
-            className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-soft hover:bg-slate-50"
-          >
-            창고 등록
-          </Link>
-          <Link
             href="/bom"
             className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-soft hover:bg-slate-50"
           >

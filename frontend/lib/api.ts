@@ -14,6 +14,18 @@ import {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
 
+function networkErrorMessage(): string {
+  return `API 서버 연결에 실패했습니다. Vercel 환경 변수 NEXT_PUBLIC_API_URL에 공개 백엔드(https://...)를 설정했는지 확인하세요.`;
+}
+
+async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch {
+    throw new Error(networkErrorMessage());
+  }
+}
+
 export async function getDashboardData(
   period: Period,
   productId: string,
@@ -25,7 +37,7 @@ export async function getDashboardData(
       product_id: productId,
       production_qty: String(productionQty),
     });
-    const res = await fetch(`${API_BASE_URL}/api/dashboard?${params.toString()}`, {
+    const res = await apiFetch(`${API_BASE_URL}/api/dashboard?${params.toString()}`, {
       cache: "no-store",
     });
     if (!res.ok) {
@@ -78,7 +90,7 @@ export async function getDashboardData(
 }
 
 export async function fetchItems(): Promise<Item[]> {
-  const res = await fetch(`${API_BASE_URL}/api/items`, { cache: "no-store" });
+  const res = await apiFetch(`${API_BASE_URL}/api/items`, { cache: "no-store" });
   if (!res.ok) throw new Error("품목 목록을 가져오지 못했습니다.");
   return (await res.json()) as Item[];
 }
@@ -96,7 +108,7 @@ async function parseError(res: Response): Promise<string> {
 }
 
 export async function createItem(payload: ItemCreatePayload): Promise<Item> {
-  const res = await fetch(`${API_BASE_URL}/api/items`, {
+  const res = await apiFetch(`${API_BASE_URL}/api/items`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -115,12 +127,12 @@ export async function createItem(payload: ItemCreatePayload): Promise<Item> {
 }
 
 export async function deleteItem(id: number): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/items/${id}`, { method: "DELETE" });
+  const res = await apiFetch(`${API_BASE_URL}/api/items/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error(await parseError(res));
 }
 
 export async function fetchWarehouses(): Promise<Warehouse[]> {
-  const res = await fetch(`${API_BASE_URL}/api/warehouses`, { cache: "no-store" });
+  const res = await apiFetch(`${API_BASE_URL}/api/warehouses`, { cache: "no-store" });
   if (!res.ok) throw new Error("창고 목록을 가져오지 못했습니다.");
   return (await res.json()) as Warehouse[];
 }
@@ -129,7 +141,7 @@ export async function createWarehouse(input: {
   code: string;
   name: string;
 }): Promise<Warehouse> {
-  const res = await fetch(`${API_BASE_URL}/api/warehouses`, {
+  const res = await apiFetch(`${API_BASE_URL}/api/warehouses`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -139,12 +151,12 @@ export async function createWarehouse(input: {
 }
 
 export async function deleteWarehouse(id: number): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/warehouses/${id}`, { method: "DELETE" });
+  const res = await apiFetch(`${API_BASE_URL}/api/warehouses/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error(await parseError(res));
 }
 
 export async function fetchBoms(): Promise<BomRecord[]> {
-  const res = await fetch(`${API_BASE_URL}/api/boms`, { cache: "no-store" });
+  const res = await apiFetch(`${API_BASE_URL}/api/boms`, { cache: "no-store" });
   if (!res.ok) throw new Error("BOM 목록을 가져오지 못했습니다.");
   return (await res.json()) as BomRecord[];
 }
@@ -156,7 +168,7 @@ export async function createBom(input: {
   valid_from?: number | null;
   valid_to?: number | null;
 }): Promise<BomRecord> {
-  const res = await fetch(`${API_BASE_URL}/api/boms`, {
+  const res = await apiFetch(`${API_BASE_URL}/api/boms`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -172,12 +184,12 @@ export async function createBom(input: {
 }
 
 export async function deleteBom(id: number): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/boms/${id}`, { method: "DELETE" });
+  const res = await apiFetch(`${API_BASE_URL}/api/boms/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error(await parseError(res));
 }
 
 export async function fetchInventories(): Promise<InventoryRecord[]> {
-  const res = await fetch(`${API_BASE_URL}/api/inventories`, { cache: "no-store" });
+  const res = await apiFetch(`${API_BASE_URL}/api/inventories`, { cache: "no-store" });
   if (!res.ok) throw new Error("재고 목록을 가져오지 못했습니다.");
   return (await res.json()) as InventoryRecord[];
 }
@@ -188,7 +200,7 @@ export async function createInventory(input: {
   qty: number;
   as_of_date: string;
 }): Promise<InventoryRecord> {
-  const res = await fetch(`${API_BASE_URL}/api/inventories`, {
+  const res = await apiFetch(`${API_BASE_URL}/api/inventories`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -198,7 +210,7 @@ export async function createInventory(input: {
 }
 
 export async function fetchProductionPlans(): Promise<ProductionPlanRecord[]> {
-  const res = await fetch(`${API_BASE_URL}/api/production-plans`, { cache: "no-store" });
+  const res = await apiFetch(`${API_BASE_URL}/api/production-plans`, { cache: "no-store" });
   if (!res.ok) throw new Error("생산계획을 가져오지 못했습니다.");
   return (await res.json()) as ProductionPlanRecord[];
 }
@@ -211,7 +223,7 @@ export async function createProductionPlan(input: {
   status?: string;
   version?: string | null;
 }): Promise<ProductionPlanRecord> {
-  const res = await fetch(`${API_BASE_URL}/api/production-plans`, {
+  const res = await apiFetch(`${API_BASE_URL}/api/production-plans`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -228,7 +240,7 @@ export async function createProductionPlan(input: {
 }
 
 export async function deleteProductionPlan(id: number): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/production-plans/${id}`, {
+  const res = await apiFetch(`${API_BASE_URL}/api/production-plans/${id}`, {
     method: "DELETE",
   });
   if (!res.ok) throw new Error(await parseError(res));
@@ -241,7 +253,7 @@ export async function postCalculate(
   period: string,
   productionPlan: CalculatePlanLine[]
 ): Promise<CalculateResponse> {
-  const res = await fetch(`${API_BASE_URL}/api/calculate`, {
+  const res = await apiFetch(`${API_BASE_URL}/api/calculate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     cache: "no-store",
@@ -310,4 +322,33 @@ export async function postCalculate(
     })),
     forecast: raw.forecast,
   };
+}
+
+export async function ensureMainWarehouse(): Promise<Warehouse> {
+  const list = await fetchWarehouses();
+  const existing = list.find((w) => w.code.toUpperCase() === "MAIN");
+  if (existing) return existing;
+  try {
+    return await createWarehouse({ code: "MAIN", name: "기본 창고" });
+  } catch {
+    const refreshed = await fetchWarehouses();
+    const fallback = refreshed.find((w) => w.code.toUpperCase() === "MAIN");
+    if (fallback) return fallback;
+    if (refreshed.length > 0) return refreshed[0];
+    throw new Error("기본 창고(MAIN)를 생성하지 못했습니다.");
+  }
+}
+
+export async function createInventorySimple(input: {
+  item_id: number;
+  qty: number;
+  as_of_date: string;
+}): Promise<InventoryRecord> {
+  const main = await ensureMainWarehouse();
+  return createInventory({
+    item_id: input.item_id,
+    warehouse_id: main.id,
+    qty: input.qty,
+    as_of_date: input.as_of_date,
+  });
 }
