@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 
+import { PlanTable } from "@/components/PlanTable";
 import { fetchItems, generate52wPlan } from "@/lib/api";
 import type { Generate52wResponse, Item } from "@/lib/types";
 
@@ -74,50 +75,25 @@ export default function PlanPage() {
   };
 
   return (
-    <main className="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
-      <h1 className="text-2xl font-semibold">52주 SCM 계획</h1>
+    <div className="space-y-6 py-4">
+      <h1 className="text-3xl font-semibold">52 Week SCM Plan</h1>
       <form onSubmit={onGenerate} className="grid gap-3 rounded-2xl border bg-white p-4 shadow-soft md:grid-cols-4">
         <select name="product_id" className={inputClass} required onFocus={ensureItemsLoaded} defaultValue="">
-          <option value="" disabled>제품 선택</option>
+          <option value="" disabled>Product</option>
           {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <input name="start_date" type="date" className={inputClass} defaultValue={todayISO()} />
-        <input name="current_inventory" type="number" className={inputClass} placeholder="현재 재고" defaultValue={100} />
-        <input name="safety_stock" type="number" className={inputClass} placeholder="안전재고" defaultValue={50} />
+        <input name="current_inventory" type="number" className={inputClass} placeholder="Current Inventory" defaultValue={100} />
+        <input name="safety_stock" type="number" className={inputClass} placeholder="Safety Stock" defaultValue={50} />
         <input name="moq" type="number" className={inputClass} placeholder="MOQ" defaultValue={0} />
-        <input name="production_leadtime_days" type="number" className={inputClass} placeholder="생산 리드타임" defaultValue={5} />
-        <input name="material_leadtime_days" type="number" className={inputClass} placeholder="원재료 리드타임" defaultValue={3} />
-        <input name="production_capa_per_day" type="number" className={inputClass} placeholder="일 CAPA" defaultValue={300} />
-        <input name="weekly_forecast" type="number" className={inputClass} placeholder="주간 예측수요" defaultValue={80} />
-        <button type="submit" className="rounded-xl bg-stock px-4 py-2 text-white">생성</button>
+        <input name="production_leadtime_days" type="number" className={inputClass} placeholder="Prod Leadtime" defaultValue={5} />
+        <input name="material_leadtime_days" type="number" className={inputClass} placeholder="Material Leadtime" defaultValue={3} />
+        <input name="production_capa_per_day" type="number" className={inputClass} placeholder="Daily CAPA" defaultValue={300} />
+        <input name="weekly_forecast" type="number" className={inputClass} placeholder="Weekly Forecast" defaultValue={80} />
+        <button type="submit" className="rounded-xl bg-stock px-4 py-2 text-white">Generate</button>
       </form>
       {message ? <p className="text-sm text-slate-700">{message}</p> : null}
-      {result ? (
-        <div className="max-h-[520px] overflow-auto rounded-2xl border bg-white p-4 shadow-soft">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-slate-50">
-              <tr>
-                <th className="p-2 text-left">주차</th>
-                <th className="p-2 text-left">수요</th>
-                <th className="p-2 text-left">생산</th>
-                <th className="p-2 text-left">예상재고</th>
-                <th className="p-2 text-left">위험</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.plans.map((r) => (
-                <tr key={r.week} className="border-t">
-                  <td className="p-2">{r.week}</td>
-                  <td className="p-2">{r.demand}</td>
-                  <td className="p-2">{r.production}</td>
-                  <td className="p-2">{r.inventory}</td>
-                  <td className="p-2">{r.shortage_risk ? "주의" : "정상"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-    </main>
+      {result ? <PlanTable data={result.plans} /> : null}
+    </div>
   );
 }

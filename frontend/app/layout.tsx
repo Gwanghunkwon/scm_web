@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import "./globals.css";
 
 import { AppNav } from "@/components/AppNav";
 
 export const metadata: Metadata = {
   title: "SCM MVP",
-  description: "BOM·재고·생산계획 기반 발주 시뮬레이션",
+  description: "SCM auto scheduling platform",
 };
 
 export default function RootLayout({
@@ -13,9 +13,11 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
-      <body className="min-h-screen">
+      <body className="min-h-screen bg-slate-50 text-slate-900">
         <AppNav />
-        {children}
+        <main className="mx-auto -mt-[72px] max-w-[1400px] px-4 pb-6 md:px-6">
+          <div className="md:ml-60">{children}</div>
+        </main>
       </body>
     </html>
   );

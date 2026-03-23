@@ -1,50 +1,78 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const links = [
-  { href: "/", label: "대시보드" },
-  { href: "/items", label: "품목(제품·원재료)" },
-  { href: "/warehouses", label: "창고" },
-  { href: "/bom", label: "배합비(BOM)" },
-  { href: "/inventory", label: "재고" },
-  { href: "/production-plans", label: "생산계획" },
-  { href: "/plan", label: "52주 계획" },
-  { href: "/calendar", label: "SCM 캘린더" },
+const topLinks = [
+  { href: "/", label: "Dashboard" },
+  { href: "/items", label: "Products" },
+  { href: "/inventory", label: "Inventory" },
+  { href: "/forecast", label: "Forecast" },
+  { href: "/plan", label: "Plan" },
+  { href: "/calendar", label: "Calendar" },
+  { href: "/settings", label: "Settings" },
+] as const;
+
+const sideLinks = [
+  { href: "/", label: "Dashboard" },
+  { href: "/items", label: "Products" },
+  { href: "/inventory", label: "Inventory" },
+  { href: "/forecast", label: "Forecast" },
+  { href: "/plan", label: "52 Week Plan" },
+  { href: "/calendar", label: "Calendar" },
+  { href: "/suppliers", label: "Suppliers" },
+  { href: "/settings", label: "Settings" },
 ] as const;
 
 export function AppNav() {
   const pathname = usePathname();
 
   return (
-    <header className="border-b border-slate-200 bg-white shadow-soft">
-      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between md:px-6">
-        <Link href="/" className="text-lg font-semibold text-slate-900">
-          SCM <span className="text-stock">MVP</span>
-        </Link>
-        <nav className="flex flex-wrap gap-1.5 text-sm">
-          {links.map(({ href, label }) => {
-            const active =
-              href === "/"
-                ? pathname === "/"
-                : pathname === href || pathname.startsWith(`${href}/`);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`rounded-lg px-3 py-1.5 font-medium transition-colors ${
-                  active
-                    ? "bg-stock text-white"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                }`}
-              >
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
+    <>
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 md:px-6">
+          <Link href="/" className="text-xl font-semibold text-slate-900">
+            SCM <span className="text-stock">MVP</span>
+          </Link>
+          <nav className="flex flex-wrap gap-1.5 text-sm">
+            {topLinks.map(({ href, label }) => {
+              const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`rounded-lg px-3 py-1.5 font-medium ${
+                    active ? "bg-stock text-white" : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </header>
+
+      <div className="mx-auto flex w-full max-w-[1400px] gap-4 px-4 py-4 md:px-6">
+        <aside className="hidden w-56 shrink-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-soft md:block">
+          <nav className="space-y-1 text-sm">
+            {sideLinks.map(({ href, label }) => {
+              const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`block rounded-lg px-3 py-2 font-medium ${
+                    active ? "bg-slate-100 text-slate-900" : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+        </aside>
       </div>
-    </header>
+    </>
   );
 }
