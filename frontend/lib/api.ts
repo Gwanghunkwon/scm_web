@@ -15,6 +15,10 @@ import {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
 
+export function getApiBaseUrl(): string {
+  return API_BASE_URL;
+}
+
 function networkErrorMessage(): string {
   return `API 서버 연결에 실패했습니다. Vercel 환경 변수 NEXT_PUBLIC_API_URL에 공개 백엔드(https://...)를 설정했는지 확인하세요.`;
 }
@@ -24,6 +28,18 @@ async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
     return await fetch(input, init);
   } catch {
     throw new Error(networkErrorMessage());
+  }
+}
+
+export async function checkApiHealth(): Promise<{ ok: boolean; detail: string }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/`, { cache: "no-store" });
+    if (!res.ok) {
+      return { ok: false, detail: `HTTP ${res.status}` };
+    }
+    return { ok: true, detail: "OK" };
+  } catch {
+    return { ok: false, detail: networkErrorMessage() };
   }
 }
 

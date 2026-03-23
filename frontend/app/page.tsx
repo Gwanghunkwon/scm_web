@@ -10,7 +10,13 @@ import { PeriodToggle } from "@/components/PeriodToggle";
 import { ProcurementForecastChart } from "@/components/ProcurementForecastChart";
 import { ProductFilter } from "@/components/ProductFilter";
 import { ShortageTable } from "@/components/ShortageTable";
-import { fetchItems, fetchProductionPlans, getDashboardData } from "@/lib/api";
+import {
+  checkApiHealth,
+  fetchItems,
+  fetchProductionPlans,
+  getApiBaseUrl,
+  getDashboardData,
+} from "@/lib/api";
 import { sumPlannedQtyInHorizon } from "@/lib/productionPlanDashboard";
 import { MaterialRow, Period } from "@/lib/types";
 import type { DashboardResponse, Item, ProductionPlanRecord } from "@/lib/types";
@@ -31,6 +37,7 @@ export default function DashboardPage() {
   const [productionPlans, setProductionPlans] = useState<ProductionPlanRecord[]>([]);
   /** 품목 API 실패 시(특히 Vercel에서 NEXT_PUBLIC_API_URL 미설정) 안내용 */
   const [apiLoadError, setApiLoadError] = useState<string | null>(null);
+  const [apiHealth, setApiHealth] = useState<{ ok: boolean; detail: string } | null>(null);
 
   const productItems = useMemo(
     () => allItems.filter((i) => i.type === "PRODUCT"),
@@ -41,6 +48,10 @@ export default function DashboardPage() {
     if (!productId) return 0;
     return sumPlannedQtyInHorizon(Number(productId), period, productionPlans);
   }, [productId, period, productionPlans]);
+
+  useEffect(() => {
+    checkApiHealth().then(setApiHealth);
+  }, []);
 
   useEffect(() => {
     setProductLoading(true);
@@ -85,6 +96,17 @@ export default function DashboardPage() {
     return (
       <main className="mx-auto max-w-7xl space-y-4 p-6">
         <h1 className="text-2xl font-semibold text-slate-900">SCM 대시보드</h1>
+        <div
+          className={`rounded-2xl border p-3 text-xs ${
+            apiHealth?.ok
+              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+              : "border-red-200 bg-red-50 text-red-900"
+          }`}
+        >
+          API URL: <code className="font-mono">{getApiBaseUrl()}</code> / 연결 상태:{" "}
+          <strong>{apiHealth?.ok ? "정상" : "실패"}</strong>
+          {apiHealth && !apiHealth.ok ? ` (${apiHealth.detail})` : ""}
+        </div>
         {apiLoadError ? (
           <div className="space-y-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
             <p>
@@ -152,6 +174,17 @@ export default function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
+      <div
+        className={`rounded-2xl border px-4 py-2 text-xs ${
+          apiHealth?.ok
+            ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+            : "border-red-200 bg-red-50 text-red-900"
+        }`}
+      >
+        API URL: <code className="font-mono">{getApiBaseUrl()}</code> / 연결 상태:{" "}
+        <strong>{apiHealth?.ok ? "정상" : "실패"}</strong>
+        {apiHealth && !apiHealth.ok ? ` (${apiHealth.detail})` : ""}
+      </div>
       <section className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
           SCM 대시보드
