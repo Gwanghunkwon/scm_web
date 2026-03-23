@@ -132,7 +132,15 @@ async function parseError(res: Response): Promise<string> {
   try {
     const j = JSON.parse(t) as { detail?: unknown };
     if (typeof j.detail === "string") {
-      if (j.detail.toLowerCase().includes("not authenticated")) {
+      const detailLower = j.detail.toLowerCase();
+      if (
+        detailLower.includes("not authenticated") ||
+        detailLower.includes("invalid token") ||
+        j.detail.includes("유효하지 않은 토큰")
+      ) {
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem("scm_token");
+        }
         return "인증이 필요합니다. 백엔드가 인증 모드라면 먼저 로그인 토큰을 발급해 주세요.";
       }
       return j.detail;

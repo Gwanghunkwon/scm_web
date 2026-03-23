@@ -7,6 +7,7 @@ import type { Item } from "@/lib/types";
 
 const inputClass =
   "h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-soft outline-none focus:border-stock";
+const UOM_OPTIONS = ["EA", "KG", "G", "L", "ML", "BOX", "PACK"] as const;
 
 export default function ItemsPage() {
   const [items, setItems] = useState<Item[]>([]);
@@ -149,10 +150,16 @@ export default function ItemsPage() {
             </label>
             <label className="block text-sm">
               <span className="text-slate-600">단위(UOM) *</span>
-              <input name="uom" className={inputClass} placeholder="EA, kg, g..." required />
+              <select name="uom" className={inputClass} required defaultValue="EA">
+                {UOM_OPTIONS.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="block text-sm">
-              <span className="text-slate-600">안전재고</span>
+              <span className="text-slate-600">재고</span>
               <input
                 name="safety_stock_qty"
                 type="number"
