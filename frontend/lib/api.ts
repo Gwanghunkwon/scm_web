@@ -23,9 +23,20 @@ function networkErrorMessage(): string {
   return `API 서버 연결에 실패했습니다. Vercel 환경 변수 NEXT_PUBLIC_API_URL에 공개 백엔드(https://...)를 설정했는지 확인하세요.`;
 }
 
+function buildRequestInitWithAuth(init?: RequestInit): RequestInit | undefined {
+  const token =
+    typeof window !== "undefined" ? window.localStorage.getItem("scm_token") : null;
+  if (!token) return init;
+  const headers = new Headers(init?.headers ?? {});
+  if (!headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  return { ...(init ?? {}), headers };
+}
+
 async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
   try {
-    return await fetch(input, init);
+    return await fetch(input, buildRequestInitWithAuth(init));
   } catch {
     throw new Error(networkErrorMessage());
   }
@@ -116,7 +127,12 @@ async function parseError(res: Response): Promise<string> {
   const t = await res.text();
   try {
     const j = JSON.parse(t) as { detail?: unknown };
-    if (typeof j.detail === "string") return j.detail;
+    if (typeof j.detail === "string") {
+      if (j.detail.toLowerCase().includes("not authenticated")) {
+        return "인증이 필요합니다. 백엔드가 인증 모드라면 먼저 로그인 토큰을 발급해 주세요.";
+      }
+      return j.detail;
+    }
     if (Array.isArray(j.detail)) return JSON.stringify(j.detail);
   } catch {
     /* ignore */

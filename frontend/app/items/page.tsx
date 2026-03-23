@@ -38,9 +38,6 @@ export default function ItemsPage() {
     const name = String(fd.get("name") || "").trim();
     const type = String(fd.get("type") || "").trim().toUpperCase();
     const uom = String(fd.get("uom") || "").trim();
-    const unitPriceRaw = String(fd.get("unit_price") || "").trim();
-    const unit_price =
-      unitPriceRaw === "" ? null : Number(unitPriceRaw.replace(/,/g, ""));
     const safety_stock_qty = Number(fd.get("safety_stock_qty") || 0);
     const moqRaw = String(fd.get("moq") || "").trim();
     const moq = moqRaw === "" ? null : Number(moqRaw);
@@ -62,10 +59,6 @@ export default function ItemsPage() {
       setMessage({ type: "err", text: "유형은 PRODUCT 또는 RAW 여야 합니다." });
       return;
     }
-    if (unit_price !== null && Number.isNaN(unit_price)) {
-      setMessage({ type: "err", text: "단가는 숫자이거나 비워 두세요." });
-      return;
-    }
     if (moq !== null && Number.isNaN(moq)) {
       setMessage({ type: "err", text: "MOQ는 숫자이거나 비워 두세요." });
       return;
@@ -77,7 +70,6 @@ export default function ItemsPage() {
         name,
         type,
         uom,
-        unit_price,
         safety_stock_qty,
         moq,
         lead_time_days,
@@ -160,10 +152,6 @@ export default function ItemsPage() {
               <input name="uom" className={inputClass} placeholder="EA, kg, g..." required />
             </label>
             <label className="block text-sm">
-              <span className="text-slate-600">단가 (원재료 선택)</span>
-              <input name="unit_price" type="text" className={inputClass} placeholder="비우면 미입력" />
-            </label>
-            <label className="block text-sm">
               <span className="text-slate-600">안전재고</span>
               <input
                 name="safety_stock_qty"
@@ -234,7 +222,6 @@ export default function ItemsPage() {
                     <th className="p-2">이름</th>
                     <th className="p-2">유형</th>
                     <th className="p-2">단위</th>
-                    <th className="p-2">단가</th>
                     <th className="p-2" />
                   </tr>
                 </thead>
@@ -255,7 +242,6 @@ export default function ItemsPage() {
                         </span>
                       </td>
                       <td className="p-2">{it.uom}</td>
-                      <td className="p-2">{it.unit_price ?? "—"}</td>
                       <td className="p-2">
                         <button
                           type="button"
