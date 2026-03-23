@@ -27,7 +27,12 @@ def create_item(payload: ItemCreate, db: Session = Depends(get_db)):
         uom=payload.uom,
         unit_price=payload.unit_price,
         safety_stock_qty=payload.safety_stock_qty,
+        moq=payload.moq,
         lead_time_days=payload.lead_time_days,
+        production_leadtime_days=payload.production_leadtime_days,
+        material_leadtime_days=payload.material_leadtime_days,
+        production_capa_per_day=payload.production_capa_per_day,
+        shelf_life_days=payload.shelf_life_days,
         is_active=payload.is_active,
     )
     db.add(item)
@@ -65,7 +70,12 @@ def update_item(item_id: int, payload: ItemCreate, db: Session = Depends(get_db)
     item.uom = payload.uom
     item.unit_price = payload.unit_price
     item.safety_stock_qty = payload.safety_stock_qty
+    item.moq = payload.moq
     item.lead_time_days = payload.lead_time_days
+    item.production_leadtime_days = payload.production_leadtime_days
+    item.material_leadtime_days = payload.material_leadtime_days
+    item.production_capa_per_day = payload.production_capa_per_day
+    item.shelf_life_days = payload.shelf_life_days
     item.is_active = payload.is_active
 
     db.commit()

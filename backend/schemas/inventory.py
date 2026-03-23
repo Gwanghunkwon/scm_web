@@ -8,6 +8,8 @@ class InventoryBase(BaseModel):
     warehouse_id: int
     qty: float
     as_of_date: date
+    lot_no: str | None = None
+    expiry_date: date | None = None
 
 
 class InventoryCreate(InventoryBase):

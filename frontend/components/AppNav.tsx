@@ -6,9 +6,12 @@ import { usePathname } from "next/navigation";
 const links = [
   { href: "/", label: "대시보드" },
   { href: "/items", label: "품목(제품·원재료)" },
+  { href: "/warehouses", label: "창고" },
   { href: "/bom", label: "배합비(BOM)" },
   { href: "/inventory", label: "재고" },
   { href: "/production-plans", label: "생산계획" },
+  { href: "/plan", label: "52주 계획" },
+  { href: "/calendar", label: "SCM 캘린더" },
 ] as const;
 
 export function AppNav() {

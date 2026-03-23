@@ -42,7 +42,17 @@ export default function ItemsPage() {
     const unit_price =
       unitPriceRaw === "" ? null : Number(unitPriceRaw.replace(/,/g, ""));
     const safety_stock_qty = Number(fd.get("safety_stock_qty") || 0);
+    const moqRaw = String(fd.get("moq") || "").trim();
+    const moq = moqRaw === "" ? null : Number(moqRaw);
     const lead_time_days = Number(fd.get("lead_time_days") || 0);
+    const productionLeadRaw = String(fd.get("production_leadtime_days") || "").trim();
+    const production_leadtime_days = productionLeadRaw === "" ? null : Number(productionLeadRaw);
+    const materialLeadRaw = String(fd.get("material_leadtime_days") || "").trim();
+    const material_leadtime_days = materialLeadRaw === "" ? null : Number(materialLeadRaw);
+    const capaRaw = String(fd.get("production_capa_per_day") || "").trim();
+    const production_capa_per_day = capaRaw === "" ? null : Number(capaRaw);
+    const shelfRaw = String(fd.get("shelf_life_days") || "").trim();
+    const shelf_life_days = shelfRaw === "" ? null : Number(shelfRaw);
 
     if (!code || !name || !type || !uom) {
       setMessage({ type: "err", text: "코드, 이름, 유형, 단위는 필수입니다." });
@@ -56,6 +66,10 @@ export default function ItemsPage() {
       setMessage({ type: "err", text: "단가는 숫자이거나 비워 두세요." });
       return;
     }
+    if (moq !== null && Number.isNaN(moq)) {
+      setMessage({ type: "err", text: "MOQ는 숫자이거나 비워 두세요." });
+      return;
+    }
 
     try {
       await createItem({
@@ -65,7 +79,12 @@ export default function ItemsPage() {
         uom,
         unit_price,
         safety_stock_qty,
+        moq,
         lead_time_days,
+        production_leadtime_days,
+        material_leadtime_days,
+        production_capa_per_day,
+        shelf_life_days,
         is_active: true,
       });
       e.currentTarget.reset();
@@ -163,6 +182,26 @@ export default function ItemsPage() {
                 defaultValue={0}
                 min={0}
               />
+            </label>
+            <label className="block text-sm">
+              <span className="text-slate-600">MOQ (선택)</span>
+              <input name="moq" type="number" className={inputClass} min={0} step="any" />
+            </label>
+            <label className="block text-sm">
+              <span className="text-slate-600">생산 리드타임(일)</span>
+              <input name="production_leadtime_days" type="number" className={inputClass} min={0} />
+            </label>
+            <label className="block text-sm">
+              <span className="text-slate-600">원재료 리드타임(일)</span>
+              <input name="material_leadtime_days" type="number" className={inputClass} min={0} />
+            </label>
+            <label className="block text-sm">
+              <span className="text-slate-600">생산 CAPA / 일</span>
+              <input name="production_capa_per_day" type="number" className={inputClass} min={0} step="any" />
+            </label>
+            <label className="block text-sm sm:col-span-2">
+              <span className="text-slate-600">소비기한(일)</span>
+              <input name="shelf_life_days" type="number" className={inputClass} min={0} />
             </label>
           </div>
           <button

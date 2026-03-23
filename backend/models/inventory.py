@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Numeric
+from sqlalchemy import Column, Integer, Numeric, String
 from sqlalchemy.types import Date
 
 from core.database import Base
@@ -12,4 +12,6 @@ class Inventory(Base):
     warehouse_id = Column(Integer, nullable=False, index=True)
     qty = Column(Numeric, nullable=False, default=0)
     as_of_date = Column(Date, nullable=False)
+    lot_no = Column(String, nullable=True)
+    expiry_date = Column(Date, nullable=True)
 

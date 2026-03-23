@@ -19,7 +19,11 @@ def create_warehouse(payload: WarehouseCreate, db: Session = Depends(get_db)):
     exists = db.query(Warehouse).filter(Warehouse.code == payload.code).first()
     if exists:
         raise HTTPException(status_code=400, detail="이미 존재하는 창고 코드입니다.")
-    wh = Warehouse(code=payload.code, name=payload.name)
+    wh = Warehouse(
+        code=payload.code,
+        name=payload.name,
+        warehouse_type=payload.warehouse_type,
+    )
     db.add(wh)
     db.commit()
     db.refresh(wh)
@@ -47,6 +51,7 @@ def update_warehouse(warehouse_id: int, payload: WarehouseCreate, db: Session = 
 
     wh.code = payload.code
     wh.name = payload.name
+    wh.warehouse_type = payload.warehouse_type
 
     db.commit()
     db.refresh(wh)

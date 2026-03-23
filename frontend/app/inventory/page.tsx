@@ -3,11 +3,13 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import {
+  createInventory,
   createInventorySimple,
   fetchInventories,
   fetchItems,
+  fetchWarehouses,
 } from "@/lib/api";
-import type { InventoryRecord, Item } from "@/lib/types";
+import type { InventoryRecord, Item, Warehouse } from "@/lib/types";
 
 const inputClass =
   "h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-soft outline-none focus:border-stock";
@@ -22,6 +24,7 @@ function todayISODate(): string {
 
 export default function InventoryPage() {
   const [items, setItems] = useState<Item[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [inventories, setInventories] = useState<InventoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
@@ -31,9 +34,14 @@ export default function InventoryPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [it, inv] = await Promise.all([fetchItems(), fetchInventories()]);
+      const [it, inv, whs] = await Promise.all([
+        fetchItems(),
+        fetchInventories(),
+        fetchWarehouses(),
+      ]);
       setItems(it);
       setInventories(inv);
+      setWarehouses(whs);
     } catch (e) {
       setMessage({
         type: "err",
@@ -52,17 +60,35 @@ export default function InventoryPage() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const item_id = Number(fd.get("item_id"));
+    const warehouse_id_raw = String(fd.get("warehouse_id") || "").trim();
+    const warehouse_id = warehouse_id_raw === "" ? null : Number(warehouse_id_raw);
     const qty = Number(fd.get("qty"));
     const as_of_date = String(fd.get("as_of_date") || todayISODate());
+    const lot_no = String(fd.get("lot_no") || "").trim() || null;
+    const expiry_date = String(fd.get("expiry_date") || "").trim() || null;
     if (!item_id || !Number.isFinite(qty)) {
       setMessage({ type: "err", text: "품목·수량을 확인하세요." });
       return;
     }
     try {
-      await createInventorySimple({ item_id, qty, as_of_date });
+      if (warehouse_id !== null && Number.isFinite(warehouse_id)) {
+        await createInventory({
+          item_id,
+          warehouse_id,
+          qty,
+          as_of_date,
+          lot_no,
+          expiry_date,
+        });
+      } else {
+        await createInventorySimple({ item_id, qty, as_of_date, lot_no, expiry_date });
+      }
       setMessage({
         type: "ok",
-        text: "재고가 저장되었습니다. (기본 창고 MAIN 기준)",
+        text:
+          warehouse_id !== null
+            ? "재고가 저장되었습니다."
+            : "재고가 저장되었습니다. (기본 창고 MAIN 기준)",
       });
       await load();
     } catch (err) {
@@ -80,8 +106,8 @@ export default function InventoryPage() {
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">재고 입력</h1>
         <p className="mt-1 text-sm text-slate-600">
-          원재료(RAW) 재고 스냅샷을 등록합니다. 창고는 내부적으로 기본값 <strong>MAIN</strong>을 자동
-          사용합니다.
+          원재료(RAW) 재고 스냅샷을 등록합니다. 창고를 선택하지 않으면 기본값 <strong>MAIN</strong>을
+          자동 사용합니다.
         </p>
       </div>
 
@@ -103,6 +129,17 @@ export default function InventoryPage() {
           className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft"
         >
           <h2 className="text-lg font-medium text-slate-800">재고 등록 / 수정</h2>
+          <label className="block text-sm">
+            <span className="text-slate-600">창고 (선택)</span>
+            <select name="warehouse_id" className={inputClass} defaultValue="">
+              <option value="">자동(MAIN)</option>
+              {warehouses.map((w) => (
+                <option key={w.id} value={w.id}>
+                  [{w.code}] {w.name} {w.warehouse_type ? `(${w.warehouse_type})` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="block text-sm">
             <span className="text-slate-600">품목 (원재료 권장)</span>
             <select name="item_id" className={inputClass} required defaultValue="">
@@ -130,6 +167,14 @@ export default function InventoryPage() {
               required
             />
           </label>
+          <label className="block text-sm">
+            <span className="text-slate-600">Lot 번호 (선택)</span>
+            <input name="lot_no" className={inputClass} placeholder="예: LOT-202603" />
+          </label>
+          <label className="block text-sm">
+            <span className="text-slate-600">소비기한 (선택)</span>
+            <input name="expiry_date" type="date" className={inputClass} />
+          </label>
           <button
             type="submit"
             className="rounded-xl bg-stock px-4 py-2.5 text-sm font-medium text-white"
@@ -150,6 +195,8 @@ export default function InventoryPage() {
                     <th className="p-2">품목</th>
                     <th className="p-2">수량</th>
                     <th className="p-2">기준일</th>
+                    <th className="p-2">Lot</th>
+                    <th className="p-2">소비기한</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -160,6 +207,8 @@ export default function InventoryPage() {
                         <td className="p-2">{it ? `${it.code} · ${it.name}` : inv.item_id}</td>
                         <td className="p-2">{inv.qty}</td>
                         <td className="p-2">{inv.as_of_date}</td>
+                        <td className="p-2">{inv.lot_no ?? "—"}</td>
+                        <td className="p-2">{inv.expiry_date ?? "—"}</td>
                       </tr>
                     );
                   })}

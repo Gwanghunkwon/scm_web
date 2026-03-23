@@ -16,18 +16,20 @@ def list_inventories(db: Session = Depends(get_db)):
 
 @router.post("", response_model=InventoryRead)
 def create_inventory(payload: InventoryCreate, db: Session = Depends(get_db)):
-    # 같은 item_id/warehouse_id/as_of_date 조합이 이미 있으면 qty를 갱신한다.
+    # 같은 item_id/warehouse_id/as_of_date/lot_no 조합이 이미 있으면 qty를 갱신한다.
     existing = (
         db.query(Inventory)
         .filter(
             Inventory.item_id == payload.item_id,
             Inventory.warehouse_id == payload.warehouse_id,
             Inventory.as_of_date == payload.as_of_date,
+            Inventory.lot_no == payload.lot_no,
         )
         .first()
     )
     if existing:
         existing.qty = payload.qty
+        existing.expiry_date = payload.expiry_date
         db.commit()
         db.refresh(existing)
         return existing
@@ -37,6 +39,8 @@ def create_inventory(payload: InventoryCreate, db: Session = Depends(get_db)):
         warehouse_id=payload.warehouse_id,
         qty=payload.qty,
         as_of_date=payload.as_of_date,
+        lot_no=payload.lot_no,
+        expiry_date=payload.expiry_date,
     )
     db.add(inv)
     db.commit()

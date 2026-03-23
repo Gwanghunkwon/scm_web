@@ -16,6 +16,7 @@ from routers import (
     mrp_router,
     production_plan_router,
     purchase_order_router,
+    scm_schedule_router,
     stock_transaction_router,
     warehouse_router,
 )
@@ -47,6 +48,7 @@ def create_app() -> FastAPI:
     app.include_router(purchase_order_router.router)
     app.include_router(dashboard_router.router)
     app.include_router(calculate_router.router)
+    app.include_router(scm_schedule_router.router)
 
     return app
 
@@ -62,10 +64,34 @@ def on_startup():
     # 기존 SQLite DB에 컬럼이 없을 때만 추가 (create_all은 ALTER 미수행)
     try:
         insp = inspect(engine)
-        cols = {c["name"] for c in insp.get_columns("item")}
-        if "unit_price" not in cols:
+        item_cols = {c["name"] for c in insp.get_columns("item")}
+        warehouse_cols = {c["name"] for c in insp.get_columns("warehouse")}
+        inv_cols = {c["name"] for c in insp.get_columns("inventory")}
+
+        alters: list[str] = []
+        if "unit_price" not in item_cols:
+            alters.append("ALTER TABLE item ADD COLUMN unit_price NUMERIC")
+        if "moq" not in item_cols:
+            alters.append("ALTER TABLE item ADD COLUMN moq NUMERIC")
+        if "production_leadtime_days" not in item_cols:
+            alters.append("ALTER TABLE item ADD COLUMN production_leadtime_days INTEGER")
+        if "material_leadtime_days" not in item_cols:
+            alters.append("ALTER TABLE item ADD COLUMN material_leadtime_days INTEGER")
+        if "production_capa_per_day" not in item_cols:
+            alters.append("ALTER TABLE item ADD COLUMN production_capa_per_day NUMERIC")
+        if "shelf_life_days" not in item_cols:
+            alters.append("ALTER TABLE item ADD COLUMN shelf_life_days INTEGER")
+        if "warehouse_type" not in warehouse_cols:
+            alters.append("ALTER TABLE warehouse ADD COLUMN warehouse_type VARCHAR")
+        if "lot_no" not in inv_cols:
+            alters.append("ALTER TABLE inventory ADD COLUMN lot_no VARCHAR")
+        if "expiry_date" not in inv_cols:
+            alters.append("ALTER TABLE inventory ADD COLUMN expiry_date DATE")
+
+        if alters:
             with engine.begin() as conn:
-                conn.execute(text("ALTER TABLE item ADD COLUMN unit_price NUMERIC"))
+                for q in alters:
+                    conn.execute(text(q))
     except Exception:
         pass
 

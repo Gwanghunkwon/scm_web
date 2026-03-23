@@ -3,6 +3,7 @@ import {
   BomRecord,
   CalculateResponse,
   DashboardResponse,
+  Generate52wResponse,
   InventoryRecord,
   Item,
   ItemCreatePayload,
@@ -118,7 +119,12 @@ export async function createItem(payload: ItemCreatePayload): Promise<Item> {
       uom: payload.uom,
       unit_price: payload.unit_price ?? null,
       safety_stock_qty: payload.safety_stock_qty ?? 0,
+      moq: payload.moq ?? null,
       lead_time_days: payload.lead_time_days ?? 0,
+      production_leadtime_days: payload.production_leadtime_days ?? null,
+      material_leadtime_days: payload.material_leadtime_days ?? null,
+      production_capa_per_day: payload.production_capa_per_day ?? null,
+      shelf_life_days: payload.shelf_life_days ?? null,
       is_active: payload.is_active ?? true,
     }),
   });
@@ -140,6 +146,7 @@ export async function fetchWarehouses(): Promise<Warehouse[]> {
 export async function createWarehouse(input: {
   code: string;
   name: string;
+  warehouse_type?: string | null;
 }): Promise<Warehouse> {
   const res = await apiFetch(`${API_BASE_URL}/api/warehouses`, {
     method: "POST",
@@ -199,6 +206,8 @@ export async function createInventory(input: {
   warehouse_id: number;
   qty: number;
   as_of_date: string;
+  lot_no?: string | null;
+  expiry_date?: string | null;
 }): Promise<InventoryRecord> {
   const res = await apiFetch(`${API_BASE_URL}/api/inventories`, {
     method: "POST",
@@ -324,12 +333,37 @@ export async function postCalculate(
   };
 }
 
+export async function generate52wPlan(input: {
+  product_id: number;
+  product_name: string;
+  start_date: string;
+  current_inventory: number;
+  safety_stock: number;
+  moq?: number | null;
+  production_leadtime_days?: number;
+  material_leadtime_days?: number;
+  production_capa_per_day?: number | null;
+  forecast_by_week: Record<number, number>;
+}): Promise<Generate52wResponse> {
+  const res = await apiFetch(`${API_BASE_URL}/api/scm/generate-52w`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  return (await res.json()) as Generate52wResponse;
+}
+
 export async function ensureMainWarehouse(): Promise<Warehouse> {
   const list = await fetchWarehouses();
   const existing = list.find((w) => w.code.toUpperCase() === "MAIN");
   if (existing) return existing;
   try {
-    return await createWarehouse({ code: "MAIN", name: "기본 창고" });
+    return await createWarehouse({
+      code: "MAIN",
+      name: "기본 창고",
+      warehouse_type: "WAREHOUSE",
+    });
   } catch {
     const refreshed = await fetchWarehouses();
     const fallback = refreshed.find((w) => w.code.toUpperCase() === "MAIN");
@@ -343,6 +377,8 @@ export async function createInventorySimple(input: {
   item_id: number;
   qty: number;
   as_of_date: string;
+  lot_no?: string | null;
+  expiry_date?: string | null;
 }): Promise<InventoryRecord> {
   const main = await ensureMainWarehouse();
   return createInventory({
@@ -350,5 +386,7 @@ export async function createInventorySimple(input: {
     warehouse_id: main.id,
     qty: input.qty,
     as_of_date: input.as_of_date,
+    lot_no: input.lot_no ?? null,
+    expiry_date: input.expiry_date ?? null,
   });
 }

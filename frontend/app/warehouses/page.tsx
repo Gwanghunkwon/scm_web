@@ -36,12 +36,13 @@ export default function WarehousesPage() {
     const fd = new FormData(e.currentTarget);
     const code = String(fd.get("code") || "").trim();
     const name = String(fd.get("name") || "").trim();
+    const warehouse_type = String(fd.get("warehouse_type") || "").trim().toUpperCase() || null;
     if (!code || !name) {
       setMessage({ type: "err", text: "코드와 이름을 입력하세요." });
       return;
     }
     try {
-      await createWarehouse({ code, name });
+      await createWarehouse({ code, name, warehouse_type });
       e.currentTarget.reset();
       setMessage({ type: "ok", text: "창고가 등록되었습니다." });
       await load();
@@ -98,6 +99,14 @@ export default function WarehousesPage() {
           <span className="text-slate-600">이름</span>
           <input name="name" className={inputClass} placeholder="본사 창고" required />
         </label>
+        <label className="block flex-1 text-sm">
+          <span className="text-slate-600">유형</span>
+          <select name="warehouse_type" className={inputClass} defaultValue="WAREHOUSE">
+            <option value="FACTORY">FACTORY</option>
+            <option value="WAREHOUSE">WAREHOUSE</option>
+            <option value="STORE">STORE</option>
+          </select>
+        </label>
         <button
           type="submit"
           className="h-10 shrink-0 rounded-xl bg-stock px-4 text-sm font-medium text-white"
@@ -116,6 +125,7 @@ export default function WarehousesPage() {
                 <th className="p-3">ID</th>
                 <th className="p-3">코드</th>
                 <th className="p-3">이름</th>
+                <th className="p-3">유형</th>
                 <th className="p-3" />
               </tr>
             </thead>
@@ -125,6 +135,7 @@ export default function WarehousesPage() {
                   <td className="p-3">{w.id}</td>
                   <td className="p-3 font-mono">{w.code}</td>
                   <td className="p-3">{w.name}</td>
+                  <td className="p-3">{w.warehouse_type ?? "—"}</td>
                   <td className="p-3">
                     <button
                       type="button"

@@ -13,7 +13,12 @@ export type Item = {
   uom: string;
   unit_price?: number | null;
   safety_stock_qty?: number | null;
+  moq?: number | null;
   lead_time_days?: number | null;
+  production_leadtime_days?: number | null;
+  material_leadtime_days?: number | null;
+  production_capa_per_day?: number | null;
+  shelf_life_days?: number | null;
   is_active?: boolean | null;
 };
 
@@ -75,7 +80,12 @@ export type ItemCreatePayload = {
   uom: string;
   unit_price?: number | null;
   safety_stock_qty?: number | null;
+  moq?: number | null;
   lead_time_days?: number | null;
+  production_leadtime_days?: number | null;
+  material_leadtime_days?: number | null;
+  production_capa_per_day?: number | null;
+  shelf_life_days?: number | null;
   is_active?: boolean;
 };
 
@@ -83,6 +93,7 @@ export type Warehouse = {
   id: number;
   code: string;
   name: string;
+  warehouse_type?: string | null;
 };
 
 export type BomRecord = {
@@ -100,6 +111,8 @@ export type InventoryRecord = {
   warehouse_id: number;
   qty: number;
   as_of_date: string;
+  lot_no?: string | null;
+  expiry_date?: string | null;
 };
 
 export type ProductionPlanRecord = {
@@ -110,4 +123,26 @@ export type ProductionPlanRecord = {
   quantity: number;
   status: string;
   version: string | null;
+};
+
+export type ScmWeekPlanRow = {
+  week: number;
+  demand: number;
+  production: number;
+  inventory: number;
+  shortage_risk: boolean;
+};
+
+export type ScmTodoEvent = {
+  type: string;
+  week: number;
+  date: string;
+  description: string;
+};
+
+export type Generate52wResponse = {
+  product_id: number;
+  product_name: string;
+  plans: ScmWeekPlanRow[];
+  todos: ScmTodoEvent[];
 };
