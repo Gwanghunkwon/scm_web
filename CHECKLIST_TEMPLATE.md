@@ -10,67 +10,67 @@
 - [x] 52주 자동 계획 목표 정의
 - [x] 캘린더 To-Do 요구 정의
 - [x] MVP 범위(4~6주) 정의
-- [ ] KPI 목표(재고회전율, 품절률, 폐기율) 수치화
+- [x] KPI 목표(재고회전율, 품절률, 폐기율) 수치화
 
 ## 2. 데이터 모델
 - [x] product: safety_stock, shelf_life, production_capa 필드 확정
 - [x] material: moq, lead_time 필드 확정
 - [x] inventory: warehouse별 + lot/expiry 구조 확정
-- [ ] production/purchase week 기반 스키마 확정
-- [ ] scm_todo_calendar 이벤트 스키마 확정
+- [x] production/purchase week 기반 스키마 확정
+- [x] scm_todo_calendar 이벤트 스키마 확정
 
 ## 3. 계산 엔진(52주)
 - [x] 주차 캘린더 기준 정의(시작일, 타임존)
 - [x] 필요 생산량 계산식 구현
 - [x] 생산 CAPA 제약/이월 로직 구현
-- [ ] BOM 전개 자재 소요량 계산
+- [x] BOM 전개 자재 소요량 계산
 - [x] MOQ 반영 발주량 계산
 - [x] 리드타임 역산(발주일/생산시작/완료/출고)
-- [ ] FIFO/소비기한 반영 로직 구현
+- [x] FIFO/소비기한 반영 로직 구현
 
 ## 4. 캘린더 To-Do
 - [x] 이벤트 타입 정의(발주/생산시작/생산완료)
 - [x] 주/월/연 캘린더 UI 구현
-- [ ] 이벤트 완료/보류/재오픈 상태관리
-- [ ] 일정 충돌 경고 표시
+- [x] 이벤트 완료/보류/재오픈 상태관리
+- [x] 일정 충돌 경고 표시
 
 ## 5. 대시보드/알림
-- [ ] SKU 카드(현재재고/예상사용/필요생산) 구현
-- [ ] 위험도 배지(부족/과잉/임박만료/지연)
-- [ ] 알림 센터 및 필터 구현
-- [ ] 임박 소비기한/지연 발주 알림 트리거 연결
+- [x] SKU 카드(현재재고/예상사용/필요생산) 구현
+- [x] 위험도 배지(부족/과잉/임박만료/지연)
+- [x] 알림 센터 및 필터 구현
+- [x] 임박 소비기한/지연 발주 알림 트리거 연결
 
 ## 6. 시뮬레이션
-- [ ] 예상 판매량 조정 슬라이더/입력
-- [ ] 재고/생산/발주 수동 조정
-- [ ] 즉시 재계산 및 차이(Delta) 표시
+- [x] 예상 판매량 조정 슬라이더/입력
+- [x] 재고/생산/발주 수동 조정
+- [x] 즉시 재계산 및 차이(Delta) 표시
 
 ## 7. 권한/운영
-- [ ] 관리자/SCM/영업 권한 분리
-- [ ] 감사 로그(누가 언제 계획 변경했는지)
-- [ ] 운영 배치 주기 설정(일/주)
+- [x] 관리자/SCM/영업 권한 분리
+- [x] 감사 로그(누가 언제 계획 변경했는지)
+- [x] 운영 배치 주기 설정(일/주)
 
 ## 8. 배포/연동
-- [ ] Vercel env(`NEXT_PUBLIC_API_URL`) 설정
-- [ ] 백엔드 CORS 도메인 확인
-- [ ] production branch/repo 연결 확인
-- [ ] 배포 smoke test 완료
+- [x] Vercel env(`NEXT_PUBLIC_API_URL`) 설정
+- [x] 백엔드 CORS 도메인 확인
+- [x] production branch/repo 연결 확인
+- [x] 배포 smoke test 완료
 
 ## 9. 테스트
-- [ ] 단위: MOQ/CAPA/FIFO/리드타임 역산
-- [ ] 통합: 수요예측 -> 계획 -> 캘린더
-- [ ] E2E: 실제 배포 주소에서 주요 흐름
-- [ ] 회귀: 기존 품목/BOM/재고/대시보드 기능 영향 확인
+- [x] 단위: MOQ/CAPA/FIFO/리드타임 역산
+- [x] 통합: 수요예측 -> 계획 -> 캘린더
+- [x] E2E: 실제 배포 주소에서 주요 흐름
+- [x] 회귀: 기존 품목/BOM/재고/대시보드 기능 영향 확인
 
 ## 이슈 트래킹
 | 우선순위 | 이슈 | 상태 | 비고 |
 | --- | --- | --- | --- |
-| Critical | API 미연결(Failed to fetch) | Monitoring | env/cors 재검증 |
-| High | lot/expiry 데이터 누락 가능성 | Open | 입력 검증 강화 필요 |
-| High | CAPA/MOQ 미반영 시 일정 왜곡 | Open | 계산엔진 우선 구현 |
-| Medium | 캘린더 이벤트 중복 생성 | Open | idempotent 키 필요 |
+| Critical | API 미연결(Failed to fetch) | Closed | env/cors 반영 및 진단 바 추가 |
+| High | lot/expiry 데이터 누락 가능성 | Closed | lot/expiry 입력 필드 및 저장 반영 |
+| High | CAPA/MOQ 미반영 시 일정 왜곡 | Closed | 52주 계산엔진에 CAPA/MOQ 반영 |
+| Medium | 캘린더 이벤트 중복 생성 | Closed | 이벤트 키/주차 기준 생성 규칙 적용 |
 
 ## 다음 액션 아이템
-1. 52주 계산 API 확장 (BOM/FIFO 완전 반영)
-2. lot/expiry 포함 데이터 모델 마이그레이션
-3. 캘린더 To-Do UI 2차(월/연 캘린더 라이브러리) 릴리즈
+1. 완료: 52주 계산 API 확장 (BOM/FIFO 반영)
+2. 완료: lot/expiry 포함 데이터 모델/입력 반영
+3. 완료: 캘린더 To-Do UI 2차 릴리즈 기반 확보

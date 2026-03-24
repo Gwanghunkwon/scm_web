@@ -58,6 +58,46 @@ export async function checkApiHealth(): Promise<{ ok: boolean; detail: string }>
   }
 }
 
+type LoginResponse = {
+  access_token: string;
+  token_type: string;
+};
+
+export async function loginAndStoreToken(email: string, password: string): Promise<void> {
+  const form = new URLSearchParams({
+    username: email,
+    password,
+  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form.toString(),
+    });
+  } catch {
+    throw new Error(networkErrorMessage());
+  }
+  if (!res.ok) {
+    throw new Error("로그인에 실패했습니다. 계정 정보를 확인하세요.");
+  }
+  const data = (await res.json()) as LoginResponse;
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem("scm_token", data.access_token);
+  }
+}
+
+export function clearStoredToken(): void {
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem("scm_token");
+  }
+}
+
+export function hasStoredToken(): boolean {
+  if (typeof window === "undefined") return false;
+  return Boolean(window.localStorage.getItem("scm_token"));
+}
+
 export async function getDashboardData(
   period: Period,
   productId: string,

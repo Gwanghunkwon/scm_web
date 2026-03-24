@@ -86,7 +86,10 @@ export default function ItemsPage() {
     } catch (err) {
       setMessage({
         type: "err",
-        text: err instanceof Error ? err.message : "등록에 실패했습니다.",
+        text:
+          err instanceof Error
+            ? err.message
+            : "등록에 실패했습니다. Settings에서 로그인 상태를 먼저 확인하세요.",
       });
     }
   };
