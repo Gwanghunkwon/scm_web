@@ -1,8 +1,7 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useMemo, useState } from "react";
 
-import { PlanTable } from "@/components/PlanTable";
 import { fetchItems, generate52wPlan } from "@/lib/api";
 import type { Generate52wResponse, Item } from "@/lib/types";
 
@@ -93,7 +92,67 @@ export default function PlanPage() {
         <button type="submit" className="rounded-xl bg-stock px-4 py-2 text-white">Generate</button>
       </form>
       {message ? <p className="text-sm text-slate-700">{message}</p> : null}
-      {result ? <PlanTable data={result.plans} /> : null}
+      {result ? (
+        <div className="overflow-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-soft">
+          <table className="min-w-[1800px] text-sm">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="sticky left-0 z-10 border-b border-slate-200 bg-slate-50 p-2 text-left">
+                  항목
+                </th>
+                {result.plans.map((p) => (
+                  <th key={p.week} className="border-b border-slate-200 p-2 text-center">
+                    {p.week}주
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-slate-100">
+                <th className="sticky left-0 z-10 bg-white p-2 text-left font-medium">재고</th>
+                {result.plans.map((p) => (
+                  <td key={`inv-${p.week}`} className="p-2 text-center">
+                    {p.inventory}
+                  </td>
+                ))}
+              </tr>
+              <tr className="border-b border-slate-100">
+                <th className="sticky left-0 z-10 bg-white p-2 text-left font-medium">
+                  예상 사용량
+                </th>
+                {result.plans.map((p) => (
+                  <td key={`forecast-${p.week}`} className="p-2 text-center">
+                    {p.demand}
+                  </td>
+                ))}
+              </tr>
+              <tr className="border-b border-slate-100">
+                <th className="sticky left-0 z-10 bg-white p-2 text-left font-medium">
+                  실제 사용량
+                </th>
+                {result.plans.map((p) => (
+                  <td key={`actual-${p.week}`} className="p-2 text-center text-slate-500">
+                    {p.demand}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <th className="sticky left-0 z-10 bg-white p-2 text-left font-medium">
+                  생산필요량
+                </th>
+                {result.plans.map((p) => (
+                  <td key={`prod-${p.week}`} className="p-2 text-center">
+                    {p.production}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+          <p className="mt-3 text-xs text-slate-500">
+            실제 사용량은 현재 실적 데이터 연동 전까지 예상 사용량과 동일하게 표시됩니다.
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }
